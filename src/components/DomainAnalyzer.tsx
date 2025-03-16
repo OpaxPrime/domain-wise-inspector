@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,8 @@ import { AnalysisResultView } from "./AnalysisResult";
 import { useAuth } from "@/context/AuthContext";
 import { PremiumBanner } from "./PremiumBanner";
 
+const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
+
 export const DomainAnalyzer = () => {
   const [domains, setDomains] = useState<string[]>(['']);
   const [results, setResults] = useState<AnalysisResult[]>([]);
@@ -21,7 +22,6 @@ export const DomainAnalyzer = () => {
   const { toast } = useToast();
   const { user, updateUsage } = useAuth();
   
-  // Check if user is in trial period
   const isInTrial = user?.trialEndDate && new Date(user.trialEndDate) > new Date();
   const isPremium = user?.tier === "premium" || isInTrial;
 
@@ -61,7 +61,6 @@ export const DomainAnalyzer = () => {
   };
 
   const handleAnalyze = async () => {
-    // Filter out empty domains
     const validDomains = domains.filter(d => d.trim() !== '');
     
     if (validDomains.length === 0) {
@@ -73,7 +72,6 @@ export const DomainAnalyzer = () => {
       return;
     }
 
-    // Check if user can perform the analysis
     if (user) {
       const canProceed = await updateUsage();
       if (!canProceed) return;
@@ -84,7 +82,6 @@ export const DomainAnalyzer = () => {
     setComparison(null);
 
     try {
-      // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (validDomains.length === 1) {
@@ -110,6 +107,10 @@ export const DomainAnalyzer = () => {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleUpgradeToPremium = () => {
+    window.open(STRIPE_CHECKOUT_URL, '_blank');
   };
 
   return (
@@ -153,8 +154,8 @@ export const DomainAnalyzer = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={addDomainInput}
-                disabled={domains.length >= 5 || isAnalyzing || (!isPremium && domains.length >= 2)}
+                onClick={!isPremium && domains.length >= 2 ? handleUpgradeToPremium : addDomainInput}
+                disabled={domains.length >= 5 || isAnalyzing}
                 className="text-sm group"
               >
                 {!isPremium && domains.length >= 2 ? (
@@ -197,7 +198,15 @@ export const DomainAnalyzer = () => {
               <div className="mt-4 text-sm text-muted-foreground bg-muted/40 p-3 rounded-md">
                 <p className="flex items-center">
                   <Lock className="h-3.5 w-3.5 mr-2" />
-                  Sign in to analyze up to 5 domains per day, or sign up for premium for unlimited analyses.
+                  Sign in to analyze up to 5 domains per day, or 
+                  <Button 
+                    variant="link" 
+                    onClick={handleUpgradeToPremium}
+                    className="p-0 h-auto text-primary font-medium mx-1"
+                  >
+                    upgrade to premium
+                  </Button> 
+                  for unlimited analyses.
                 </p>
               </div>
             )}
