@@ -15,6 +15,8 @@ export interface AnalysisResult {
   recommendations: string[];
   strengths: string[];
   weaknesses: string[];
+  strengthDetails: Record<string, string>;
+  weaknessDetails: Record<string, string>;
 }
 
 export interface DomainComparison {

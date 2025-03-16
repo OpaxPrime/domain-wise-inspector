@@ -1,4 +1,3 @@
-
 import { AnalysisResult, DomainComparison, SEOMetrics } from "@/types";
 
 // Common keywords that might be beneficial for SEO
@@ -39,15 +38,17 @@ export const analyzeDomain = (domain: string): AnalysisResult => {
   
   // Generate recommendations and insights
   const recommendations = generateRecommendations(metrics, name, extension);
-  const strengths = identifyStrengths(metrics, name, extension);
-  const weaknesses = identifyWeaknesses(metrics, name, extension);
+  const { strengths, strengthDetails } = identifyStrengths(metrics, name, extension);
+  const { weaknesses, weaknessDetails } = identifyWeaknesses(metrics, name, extension);
 
   return {
     domain: cleanDomain,
     metrics,
     recommendations,
     strengths,
-    weaknesses
+    weaknesses,
+    strengthDetails,
+    weaknessDetails
   };
 };
 
@@ -130,8 +131,8 @@ function calculateSEOMetrics(name: string, extension: string): SEOMetrics {
   // Domain extension score
   const extensionScore = TLD_SCORES[extension] || 5;
   
-  // Calculate overall score (weighted average)
-  const overallScore = (
+  // Calculate overall score (weighted average) and round to integer
+  const rawScore = (
     lengthScore * 0.15 +
     (hasKeywords ? 7 : 3) * 0.2 +
     memorability * 0.2 +
@@ -139,6 +140,9 @@ function calculateSEOMetrics(name: string, extension: string): SEOMetrics {
     keywordPlacement * 0.15 +
     extensionScore * 0.15
   );
+
+  // Round to nearest integer (0-10)
+  const overallScore = Math.round(rawScore);
 
   return {
     length: lengthScore,
@@ -266,78 +270,97 @@ function generateRecommendations(metrics: SEOMetrics, name: string, extension: s
   return recommendations;
 }
 
-function identifyStrengths(metrics: SEOMetrics, name: string, extension: string): string[] {
+function identifyStrengths(metrics: SEOMetrics, name: string, extension: string): { strengths: string[], strengthDetails: Record<string, string> } {
   const strengths: string[] = [];
+  const strengthDetails: Record<string, string> = {};
   
   if (metrics.length >= 7) {
-    strengths.push("Good domain length for SEO and usability.");
+    strengths.push("Good domain length");
+    strengthDetails["Good domain length"] = "Your domain has an optimal length for SEO and usability. Domains between 6-14 characters are ideal as they are easier to remember and type while still allowing room for keywords.";
   }
   
   if (metrics.hasKeywords) {
-    strengths.push("Contains relevant keywords that may help with search rankings.");
+    strengths.push("Contains relevant keywords");
+    strengthDetails["Contains relevant keywords"] = `Your domain includes industry-relevant keywords that can improve search visibility. Search engines may give slight preference to domains that contain keywords related to your business or industry, especially if those keywords match common search queries.`;
   }
   
   if (metrics.memorability >= 8) {
-    strengths.push("Highly memorable domain name, which aids in direct traffic.");
+    strengths.push("Highly memorable");
+    strengthDetails["Highly memorable"] = "Your domain name scores high on memorability factors such as length, pronounceability, and minimal use of hyphens or numbers. Memorable domains lead to more direct traffic as users can easily recall your URL.";
   }
   
   if (metrics.brandability >= 8) {
-    strengths.push("Strong branding potential with a distinctive name.");
+    strengths.push("Strong branding potential");
+    strengthDetails["Strong branding potential"] = "Your domain has excellent branding characteristics including uniqueness and distinctiveness. A strong brand domain helps establish a unique identity and can become a valuable business asset over time.";
   }
   
   if (metrics.keywordPlacement >= 8) {
-    strengths.push("Optimal keyword placement for search engine algorithms.");
+    strengths.push("Optimal keyword placement");
+    strengthDetails["Optimal keyword placement"] = "Your domain has keywords positioned optimally for search engine algorithms. Keywords at the beginning of a domain name can have a slightly stronger SEO impact than those positioned later.";
   }
   
   if (metrics.domainExtension >= 9) {
-    strengths.push("Premium TLD with excellent SEO value and user trust.");
+    strengths.push("Premium TLD");
+    strengthDetails["Premium TLD"] = `Your domain uses a premium Top-Level Domain (TLD) extension which typically enjoys higher user trust and better SEO performance. The ${extension} TLD is widely recognized and respected across the internet.`;
   } else if (metrics.domainExtension >= 7) {
-    strengths.push("Good domain extension with solid SEO potential.");
+    strengths.push("Solid domain extension");
+    strengthDetails["Solid domain extension"] = `The ${extension} TLD provides good SEO potential and user recognition. While not as universally recognized as .com, this extension still performs well in search rankings and user trust.`;
   }
   
   if (extension === 'com') {
-    strengths.push(".com domains typically enjoy higher user trust and click-through rates.");
+    strengths.push("Uses .com extension");
+    strengthDetails["Uses .com extension"] = ".com domains typically enjoy higher user trust and click-through rates as they are the most familiar to users. This TLD is generally preferred by search engines and users alike, potentially leading to improved SEO performance.";
   }
   
-  return strengths;
+  return { strengths, strengthDetails };
 }
 
-function identifyWeaknesses(metrics: SEOMetrics, name: string, extension: string): string[] {
+function identifyWeaknesses(metrics: SEOMetrics, name: string, extension: string): { weaknesses: string[], weaknessDetails: Record<string, string> } {
   const weaknesses: string[] = [];
+  const weaknessDetails: Record<string, string> = {};
   
   if (metrics.length < 5) {
-    weaknesses.push("Very short domain names may limit keyword inclusion opportunities.");
+    weaknesses.push("Very short domain name");
+    weaknessDetails["Very short domain name"] = "While short domains are easy to type, extremely short domain names may limit keyword inclusion opportunities. This could make it harder for your site to rank for relevant industry terms through the domain name alone.";
   } else if (metrics.length > 12) {
-    weaknesses.push("Longer domain names can be harder to remember and type correctly.");
+    weaknesses.push("Lengthy domain name");
+    weaknessDetails["Lengthy domain name"] = "Longer domain names can be harder for users to remember and type correctly, potentially leading to reduced direct traffic. They can also be more prone to typos which might direct users to other websites.";
   }
   
   if (!metrics.hasKeywords) {
-    weaknesses.push("Lacks relevant keywords that could help with search rankings.");
+    weaknesses.push("Lacks relevant keywords");
+    weaknessDetails["Lacks relevant keywords"] = "Your domain doesn't contain industry-specific keywords that could help with search rankings. While modern SEO doesn't heavily weight keywords in domains, their presence can still provide a small advantage, especially for newer websites.";
   }
   
   if (metrics.memorability < 6) {
-    weaknesses.push("May be difficult for users to remember, potentially reducing return visits.");
+    weaknesses.push("Low memorability");
+    weaknessDetails["Low memorability"] = "Your domain may be difficult for users to remember due to factors such as unusual spelling, length, or the use of numbers and hyphens. This could reduce return visits and word-of-mouth marketing effectiveness.";
   }
   
   if (metrics.brandability < 6) {
-    weaknesses.push("Limited distinctive branding potential, which may impact recognition.");
+    weaknesses.push("Limited branding potential");
+    weaknessDetails["Limited branding potential"] = "Your domain may have limited distinctive branding potential, which could impact recognition and differentiation from competitors. Strong brands typically have unique, distinctive names that stand out in their industry.";
   }
   
   if (metrics.keywordPlacement < 5 && metrics.hasKeywords) {
-    weaknesses.push("Keywords positioned less optimally for search engine algorithms.");
+    weaknesses.push("Suboptimal keyword placement");
+    weaknessDetails["Suboptimal keyword placement"] = "The keywords in your domain are positioned less optimally for search engine algorithms. Keywords that appear at the beginning of a domain name may have slightly more SEO impact than those positioned later.";
   }
   
   if (metrics.domainExtension < 7) {
-    weaknesses.push("TLD may have less SEO impact than premium alternatives like .com.");
+    weaknesses.push("Less effective TLD");
+    weaknessDetails["Less effective TLD"] = `The ${extension} TLD may have less SEO impact than premium alternatives like .com. Some users may be less familiar with this extension, potentially affecting click-through rates and perceived trustworthiness.`;
   }
   
   if (name.includes('-')) {
-    weaknesses.push("Hyphens in domain names can reduce memorability and are sometimes associated with spam.");
+    weaknesses.push("Contains hyphens");
+    weaknessDetails["Contains hyphens"] = "Hyphens in domain names can reduce memorability and are sometimes associated with lower-quality websites. Users may forget to include the hyphens when typing your URL, potentially leading them to competitor sites.";
   }
   
   if (/\d/.test(name)) {
-    weaknesses.push("Numbers in domain names can make them harder to remember and communicate verbally.");
+    weaknesses.push("Contains numbers");
+    weaknessDetails["Contains numbers"] = "Numbers in domain names can make them harder to remember and communicate verbally. Users may be unsure whether to spell out the number or use the numeral, and might confuse your domain with similar variations.";
   }
   
-  return weaknesses;
+  return { weaknesses, weaknessDetails };
 }

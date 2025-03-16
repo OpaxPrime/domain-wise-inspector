@@ -4,18 +4,23 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { motion } from "framer-motion";
-import { ChevronRight, CheckCircle, XCircle } from "lucide-react";
+import { ChevronRight, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { SEOMetricsChart } from "./SEOMetricsChart";
+import { useState } from "react";
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
 }
 
 export const AnalysisResultView = ({ result }: AnalysisResultViewProps) => {
-  const { domain, metrics, recommendations, strengths, weaknesses } = result;
+  const { domain, metrics, recommendations, strengths, weaknesses, strengthDetails, weaknessDetails } = result;
   
-  // Format the score for display
-  const score = Math.round(metrics.overallScore * 10) / 10;
+  // Track expanded items
+  const [expandedStrengths, setExpandedStrengths] = useState<Record<string, boolean>>({});
+  const [expandedWeaknesses, setExpandedWeaknesses] = useState<Record<string, boolean>>({});
+  
+  // Get integer score
+  const score = metrics.overallScore;
   
   // Determine score color
   const getScoreColor = (score: number) => {
@@ -35,6 +40,21 @@ export const AnalysisResultView = ({ result }: AnalysisResultViewProps) => {
         ease: [0.32, 0.72, 0, 1]
       }
     })
+  };
+
+  // Toggle expanded state of strength/weakness
+  const toggleStrength = (strength: string) => {
+    setExpandedStrengths(prev => ({
+      ...prev,
+      [strength]: !prev[strength]
+    }));
+  };
+
+  const toggleWeakness = (weakness: string) => {
+    setExpandedWeaknesses(prev => ({
+      ...prev,
+      [weakness]: !prev[weakness]
+    }));
   };
 
   return (
@@ -132,17 +152,34 @@ export const AnalysisResultView = ({ result }: AnalysisResultViewProps) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-lg font-semibold mb-3 text-green-600 dark:text-green-400">Strengths</h4>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {strengths.map((strength, i) => (
                     <motion.li 
                       key={i}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * i, duration: 0.4 }}
-                      className="flex items-start"
+                      className="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-md overflow-hidden"
                     >
-                      <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                      <span className="text-sm ml-1.5">{strength}</span>
+                      <button 
+                        onClick={() => toggleStrength(strength)}
+                        className="flex items-center justify-between w-full px-3 py-2 text-left text-sm"
+                      >
+                        <div className="flex items-center">
+                          <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mr-1.5" />
+                          <span className="font-medium">{strength}</span>
+                        </div>
+                        {expandedStrengths[strength] ? (
+                          <ChevronUp className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                      {expandedStrengths[strength] && strengthDetails[strength] && (
+                        <div className="px-3 py-2 bg-white/50 dark:bg-black/5 border-t border-green-100 dark:border-green-900/30 text-sm">
+                          {strengthDetails[strength]}
+                        </div>
+                      )}
                     </motion.li>
                   ))}
                 </ul>
@@ -150,17 +187,34 @@ export const AnalysisResultView = ({ result }: AnalysisResultViewProps) => {
               
               <div>
                 <h4 className="text-lg font-semibold mb-3 text-red-600 dark:text-red-400">Weaknesses</h4>
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {weaknesses.map((weakness, i) => (
                     <motion.li 
                       key={i}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * i, duration: 0.4 }}
-                      className="flex items-start"
+                      className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-md overflow-hidden"
                     >
-                      <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                      <span className="text-sm ml-1.5">{weakness}</span>
+                      <button 
+                        onClick={() => toggleWeakness(weakness)}
+                        className="flex items-center justify-between w-full px-3 py-2 text-left text-sm"
+                      >
+                        <div className="flex items-center">
+                          <XCircle className="h-4 w-4 text-red-500 shrink-0 mr-1.5" />
+                          <span className="font-medium">{weakness}</span>
+                        </div>
+                        {expandedWeaknesses[weakness] ? (
+                          <ChevronUp className="h-4 w-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-gray-500" />
+                        )}
+                      </button>
+                      {expandedWeaknesses[weakness] && weaknessDetails[weakness] && (
+                        <div className="px-3 py-2 bg-white/50 dark:bg-black/5 border-t border-red-100 dark:border-red-900/30 text-sm">
+                          {weaknessDetails[weakness]}
+                        </div>
+                      )}
                     </motion.li>
                   ))}
                 </ul>
