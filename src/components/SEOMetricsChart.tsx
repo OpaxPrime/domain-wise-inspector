@@ -14,9 +14,10 @@ import {
 
 interface SEOMetricsChartProps {
   metrics: SEOMetrics;
+  isPremium?: boolean;
 }
 
-export const SEOMetricsChart = ({ metrics }: SEOMetricsChartProps) => {
+export const SEOMetricsChart = ({ metrics, isPremium = false }: SEOMetricsChartProps) => {
   // Transform metrics for the radar chart
   const chartData = [
     { name: "Length", value: metrics.length },
