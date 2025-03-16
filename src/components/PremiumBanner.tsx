@@ -12,9 +12,9 @@ export function PremiumBanner() {
   // Check if user is in trial period
   const isInTrial = user.trialEndDate && new Date(user.trialEndDate) > new Date();
   
-  // Calculate days remaining in trial
-  const daysRemaining = isInTrial ? 
-    Math.ceil((new Date(user.trialEndDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) : 
+  // Calculate hours remaining in trial
+  const hoursRemaining = isInTrial ? 
+    Math.ceil((new Date(user.trialEndDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60)) : 
     0;
   
   return (
@@ -28,7 +28,7 @@ export function PremiumBanner() {
           )}
           <div>
             {isInTrial ? (
-              <h3 className="font-medium text-sm">Your Premium Trial Ends in {daysRemaining} Days</h3>
+              <h3 className="font-medium text-sm">Your Premium Trial Ends in {hoursRemaining} Hours</h3>
             ) : (
               <h3 className="font-medium text-sm">Upgrade to Premium</h3>
             )}

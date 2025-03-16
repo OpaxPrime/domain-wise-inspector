@@ -34,13 +34,22 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
   const hiddenStrengthsCount = result.strengths.length - visibleStrengths.length;
   const hiddenWeaknessesCount = result.weaknesses.length - visibleWeaknesses.length;
 
+  // Score color logic based on score value
+  const getScoreColor = (score: number) => {
+    if (score > 7) return "bg-blue-500 text-white";
+    if (score >= 5) return "bg-yellow-400 text-gray-800";
+    return "bg-red-500 text-white";
+  };
+
+  const scoreColor = getScoreColor(result.metrics.overallScore);
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30 pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className="text-xl font-bold">{result.domain}</CardTitle>
           <div className="flex gap-2 items-center">
-            <Badge variant="outline" className="bg-background font-normal">
+            <Badge variant="outline" className={`font-normal ${scoreColor}`}>
               Score: {result.metrics.overallScore}
             </Badge>
           </div>

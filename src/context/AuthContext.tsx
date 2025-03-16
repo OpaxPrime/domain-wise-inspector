@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, AuthContextType, UserTier } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
@@ -95,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tier: "free",
         dailyUsage: 0,
         lastUsageDate: getCurrentDate(),
-        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14-day trial
+        trialEndDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1-day trial
       };
       
       // Save to mock DB
@@ -106,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast({
         title: "Signed in with Google",
-        description: `Welcome, ${googleUser.name}! You have a 14-day premium trial.`,
+        description: `Welcome, ${googleUser.name}! You have a 1-day premium trial.`,
       });
     } catch (error) {
       toast({
@@ -138,7 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tier: "free",
         dailyUsage: 0,
         lastUsageDate: getCurrentDate(),
-        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14-day trial
+        trialEndDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(), // 1-day trial
       };
       
       // Save to mock DB
@@ -149,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       toast({
         title: "Account created",
-        description: "Welcome! You have a 14-day premium trial.",
+        description: "Welcome! You have a 1-day premium trial.",
       });
     } catch (error) {
       toast({
