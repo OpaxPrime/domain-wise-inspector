@@ -3,6 +3,9 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Crown, Timer } from "lucide-react";
 
+// Stripe checkout link
+const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
+
 export function PremiumBanner() {
   const { user } = useAuth();
   
@@ -16,6 +19,10 @@ export function PremiumBanner() {
   const hoursRemaining = isInTrial ? 
     Math.ceil((new Date(user.trialEndDate!).getTime() - new Date().getTime()) / (1000 * 60 * 60)) : 
     0;
+    
+  const handleUpgradeClick = () => {
+    window.open(STRIPE_CHECKOUT_URL, '_blank');
+  };
   
   return (
     <div className="bg-gradient-to-r from-amber-100/30 to-amber-300/30 dark:from-amber-900/20 dark:to-amber-800/30 border border-amber-200 dark:border-amber-900/50 p-4 rounded-lg shadow-soft mb-8">
@@ -43,6 +50,7 @@ export function PremiumBanner() {
           variant="default" 
           size="sm" 
           className="bg-amber-500 hover:bg-amber-600 text-white"
+          onClick={handleUpgradeClick}
         >
           {isInTrial ? "Keep Premium" : "Upgrade Now"}
         </Button>

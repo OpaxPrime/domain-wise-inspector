@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { SEOMetricsChart } from "./SEOMetricsChart";
 import { AnalysisResult } from "@/types";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
@@ -42,6 +43,10 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
   };
 
   const scoreColor = getScoreColor(result.metrics.overallScore);
+  
+  const handleGetPremium = () => {
+    window.open(STRIPE_CHECKOUT_URL, '_blank');
+  };
 
   return (
     <Card className="overflow-hidden">
@@ -79,7 +84,10 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                     </DialogHeader>
                     <div className="py-4">
                       <p className="mb-4">Upgrade to Premium to unlock all SEO metrics, unlimited domain analysis, and detailed recommendations.</p>
-                      <Button className="w-full bg-amber-500 hover:bg-amber-600">
+                      <Button 
+                        className="w-full bg-amber-500 hover:bg-amber-600"
+                        onClick={handleGetPremium}
+                      >
                         <Crown className="mr-2 h-4 w-4" />
                         Get Premium
                       </Button>
