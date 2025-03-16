@@ -8,8 +8,10 @@ import { AnalysisResult, DomainComparison } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Lock, Crown } from "lucide-react";
 import { AnalysisResultView } from "./AnalysisResult";
+import { useAuth } from "@/context/AuthContext";
+import { PremiumBanner } from "./PremiumBanner";
 
 export const DomainAnalyzer = () => {
   const [domains, setDomains] = useState<string[]>(['']);
@@ -17,8 +19,22 @@ export const DomainAnalyzer = () => {
   const [comparison, setComparison] = useState<DomainComparison | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
+  const { user, updateUsage } = useAuth();
+  
+  // Check if user is in trial period
+  const isInTrial = user?.trialEndDate && new Date(user.trialEndDate) > new Date();
+  const isPremium = user?.tier === "premium" || isInTrial;
 
   const addDomainInput = () => {
+    if (!isPremium && domains.length >= 2) {
+      toast({
+        title: "Free user limit",
+        description: "Free users can compare up to 2 domains at a time. Upgrade to premium for unlimited comparisons.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (domains.length < 5) {
       setDomains([...domains, '']);
     } else {
@@ -55,6 +71,12 @@ export const DomainAnalyzer = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Check if user can perform the analysis
+    if (user) {
+      const canProceed = await updateUsage();
+      if (!canProceed) return;
     }
 
     setIsAnalyzing(true);
@@ -100,6 +122,8 @@ export const DomainAnalyzer = () => {
       >
         <h2 className="text-3xl font-bold text-center mb-8">Domain SEO Analysis</h2>
         
+        {user && <PremiumBanner />}
+        
         <Card className="glass-card p-6 md:p-8 shadow-soft">
           <div className="space-y-4">
             {domains.map((domain, index) => (
@@ -130,10 +154,20 @@ export const DomainAnalyzer = () => {
                 variant="outline"
                 size="sm"
                 onClick={addDomainInput}
-                disabled={domains.length >= 5 || isAnalyzing}
-                className="text-sm"
+                disabled={domains.length >= 5 || isAnalyzing || (!isPremium && domains.length >= 2)}
+                className="text-sm group"
               >
-                <Plus className="h-4 w-4 mr-1" /> Add domain
+                {!isPremium && domains.length >= 2 ? (
+                  <>
+                    <Lock className="h-3.5 w-3.5 mr-1 group-hover:hidden" />
+                    <Crown className="h-3.5 w-3.5 mr-1 hidden group-hover:block text-amber-500" />
+                    <span className="group-hover:text-amber-500">Premium feature</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-1" /> Add domain
+                  </>
+                )}
               </Button>
               
               <Button 
@@ -158,6 +192,15 @@ export const DomainAnalyzer = () => {
                 <span className="absolute inset-0 h-full w-full scale-0 rounded-full bg-white/20 transition-all duration-300 group-hover:scale-100 group-active:bg-white/25"></span>
               </Button>
             </div>
+            
+            {!user && (
+              <div className="mt-4 text-sm text-muted-foreground bg-muted/40 p-3 rounded-md">
+                <p className="flex items-center">
+                  <Lock className="h-3.5 w-3.5 mr-2" />
+                  Sign in to analyze up to 5 domains per day, or sign up for premium for unlimited analyses.
+                </p>
+              </div>
+            )}
           </div>
         </Card>
         
@@ -185,7 +228,11 @@ export const DomainAnalyzer = () => {
               
               <div className="grid grid-cols-1 gap-8">
                 {results.map((result, index) => (
-                  <AnalysisResultView key={index} result={result} />
+                  <AnalysisResultView 
+                    key={index} 
+                    result={result} 
+                    isPremium={isPremium}
+                  />
                 ))}
               </div>
             </motion.div>

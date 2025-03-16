@@ -3,10 +3,16 @@ import { motion } from "framer-motion";
 import { Hero } from "@/components/Hero";
 import { DomainAnalyzer } from "@/components/DomainAnalyzer";
 import { Separator } from "@/components/ui/separator";
+import { UserMenu } from "@/components/UserMenu";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="font-semibold text-lg">Domain SEO Analyzer</div>
+        <UserMenu />
+      </div>
+      
       <Hero />
       
       <motion.div 

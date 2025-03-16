@@ -1,228 +1,221 @@
 
-import { AnalysisResult } from "@/types";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { motion } from "framer-motion";
-import { ChevronRight, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { SEOMetricsChart } from "./SEOMetricsChart";
 import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronUp, Lock, Crown } from "lucide-react";
+import { SEOMetricsChart } from "./SEOMetricsChart";
+import { AnalysisResult } from "@/types";
+import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface AnalysisResultViewProps {
   result: AnalysisResult;
+  isPremium?: boolean;
 }
 
-export const AnalysisResultView = ({ result }: AnalysisResultViewProps) => {
-  const { domain, metrics, recommendations, strengths, weaknesses, strengthDetails, weaknessDetails } = result;
-  
-  // Track expanded items
-  const [expandedStrengths, setExpandedStrengths] = useState<Record<string, boolean>>({});
-  const [expandedWeaknesses, setExpandedWeaknesses] = useState<Record<string, boolean>>({});
-  
-  // Get integer score
-  const score = metrics.overallScore;
-  
-  // Determine score color
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return "text-green-500";
-    if (score >= 6) return "text-yellow-500";
-    return "text-red-500";
-  };
-  
-  // Animate each metric
-  const progressVariants = {
-    hidden: { width: 0 },
-    visible: (i: number) => ({ 
-      width: `${(metrics as any)[i] * 10}%`,
-      transition: { 
-        duration: 1,
-        delay: 0.3 + i * 0.1,
-        ease: [0.32, 0.72, 0, 1]
-      }
-    })
+export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResultViewProps) => {
+  const [isStrengthsOpen, setIsStrengthsOpen] = useState(false);
+  const [isWeaknessesOpen, setIsWeaknessesOpen] = useState(false);
+  const [expandedStrength, setExpandedStrength] = useState<string | null>(null);
+  const [expandedWeakness, setExpandedWeakness] = useState<string | null>(null);
+
+  const toggleStrengthExpansion = (strength: string) => {
+    setExpandedStrength(expandedStrength === strength ? null : strength);
   };
 
-  // Toggle expanded state of strength/weakness
-  const toggleStrength = (strength: string) => {
-    setExpandedStrengths(prev => ({
-      ...prev,
-      [strength]: !prev[strength]
-    }));
+  const toggleWeaknessExpansion = (weakness: string) => {
+    setExpandedWeakness(expandedWeakness === weakness ? null : weakness);
   };
 
-  const toggleWeakness = (weakness: string) => {
-    setExpandedWeaknesses(prev => ({
-      ...prev,
-      [weakness]: !prev[weakness]
-    }));
-  };
+  // Show only 3 strengths and 2 weaknesses for free users
+  const visibleStrengths = isPremium ? result.strengths : result.strengths.slice(0, 3);
+  const visibleWeaknesses = isPremium ? result.weaknesses : result.weaknesses.slice(0, 2);
+  const hiddenStrengthsCount = result.strengths.length - visibleStrengths.length;
+  const hiddenWeaknessesCount = result.weaknesses.length - visibleWeaknesses.length;
 
   return (
-    <Card className="glass-card overflow-hidden shadow-soft">
-      <div className="p-6 md:p-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <div>
-            <Badge variant="outline" className="mb-2">Domain Analysis</Badge>
-            <h3 className="text-2xl font-bold">{domain}</h3>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">SEO Score:</span>
-            <motion.span 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className={`text-3xl font-bold ${getScoreColor(score)}`}
-            >
-              {score}/10
-            </motion.span>
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-muted/30 pb-4">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-bold">{result.domain}</CardTitle>
+          <div className="flex gap-2 items-center">
+            <Badge variant="outline" className="bg-background font-normal">
+              Score: {result.metrics.overallScore}
+            </Badge>
           </div>
         </div>
-        
+      </CardHeader>
+      <CardContent className="pt-6 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h4 className="text-lg font-semibold mb-4">Metrics Breakdown</h4>
-            
-            <div className="space-y-4">
-              {Object.entries(metrics)
-                .filter(([key]) => key !== 'overallScore' && key !== 'hasKeywords')
-                .map(([key, value], index) => (
-                  <div key={key} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                      <span className="font-medium">{value}/10</span>
-                    </div>
-                    <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <motion.div 
-                        className="h-full bg-primary rounded-full"
-                        custom={key}
-                        initial="hidden"
-                        animate="visible"
-                        variants={progressVariants}
-                      />
-                    </div>
-                  </div>
-                ))}
-              
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Contains SEO Keywords</span>
-                  <span>{metrics.hasKeywords ? 'Yes' : 'No'}</span>
-                </div>
-                <div className="flex">
-                  {metrics.hasKeywords ? (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      <CheckCircle className="w-3 h-3 mr-1" /> Present
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-red-500 border-red-200">
-                      <XCircle className="w-3 h-3 mr-1" /> Not Found
-                    </Badge>
-                  )}
-                </div>
-              </div>
+            <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
+            <div className="h-48">
+              <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />
             </div>
             
-            <div className="mt-6">
-              <SEOMetricsChart metrics={metrics} />
-            </div>
-          </div>
-          
-          <div className="space-y-6">
-            {recommendations.length > 0 && (
-              <div>
-                <h4 className="text-lg font-semibold mb-3">Recommendations</h4>
-                <ul className="space-y-2">
-                  {recommendations.map((rec, i) => (
-                    <motion.li 
-                      key={i}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * i, duration: 0.4 }}
-                      className="flex items-start"
-                    >
-                      <ChevronRight className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm ml-1">{rec}</span>
-                    </motion.li>
-                  ))}
-                </ul>
+            {!isPremium && (
+              <div className="mt-4 flex justify-center">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-xs group">
+                      <Lock className="h-3 w-3 mr-1 group-hover:hidden" />
+                      <Crown className="h-3 w-3 mr-1 hidden group-hover:block text-amber-500" />
+                      <span className="group-hover:text-amber-500">Unlock All Metrics</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Upgrade to Premium</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <p className="mb-4">Upgrade to Premium to unlock all SEO metrics, unlimited domain analysis, and detailed recommendations.</p>
+                      <Button className="w-full bg-amber-500 hover:bg-amber-600">
+                        <Crown className="mr-2 h-4 w-4" />
+                        Get Premium
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-lg font-semibold mb-3 text-green-600 dark:text-green-400">Strengths</h4>
-                <ul className="space-y-3">
-                  {strengths.map((strength, i) => (
-                    <motion.li 
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * i, duration: 0.4 }}
-                      className="bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/30 rounded-md overflow-hidden"
-                    >
-                      <button 
-                        onClick={() => toggleStrength(strength)}
-                        className="flex items-center justify-between w-full px-3 py-2 text-left text-sm"
-                      >
-                        <div className="flex items-center">
-                          <CheckCircle className="h-4 w-4 text-green-500 shrink-0 mr-1.5" />
-                          <span className="font-medium">{strength}</span>
-                        </div>
-                        {expandedStrengths[strength] ? (
-                          <ChevronUp className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        )}
-                      </button>
-                      {expandedStrengths[strength] && strengthDetails[strength] && (
-                        <div className="px-3 py-2 bg-white/50 dark:bg-black/5 border-t border-green-100 dark:border-green-900/30 text-sm">
-                          {strengthDetails[strength]}
-                        </div>
-                      )}
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
+              <ul className="space-y-2 list-disc list-inside text-sm text-muted-foreground">
+                {isPremium
+                  ? result.recommendations.map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))
+                  : result.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))}
+                
+                {!isPremium && result.recommendations.length > 3 && (
+                  <li className="flex items-center text-primary font-medium">
+                    <Lock className="h-3 w-3 mr-1.5" />
+                    <span>{result.recommendations.length - 3} more recommendations with Premium</span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <Button
+                variant="ghost"
+                className="w-full justify-between mb-2 bg-muted/40"
+                onClick={() => setIsStrengthsOpen(!isStrengthsOpen)}
+              >
+                <span className="font-medium">Strengths</span>
+                {isStrengthsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </Button>
               
-              <div>
-                <h4 className="text-lg font-semibold mb-3 text-red-600 dark:text-red-400">Weaknesses</h4>
-                <ul className="space-y-3">
-                  {weaknesses.map((weakness, i) => (
-                    <motion.li 
-                      key={i}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * i, duration: 0.4 }}
-                      className="bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-md overflow-hidden"
-                    >
-                      <button 
-                        onClick={() => toggleWeakness(weakness)}
-                        className="flex items-center justify-between w-full px-3 py-2 text-left text-sm"
+              {isStrengthsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-md border p-4 space-y-3"
+                >
+                  {visibleStrengths.map((strength, index) => (
+                    <div key={index} className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-between p-2 h-auto text-left font-normal"
+                        onClick={() => toggleStrengthExpansion(strength)}
                       >
-                        <div className="flex items-center">
-                          <XCircle className="h-4 w-4 text-red-500 shrink-0 mr-1.5" />
-                          <span className="font-medium">{weakness}</span>
-                        </div>
-                        {expandedWeaknesses[weakness] ? (
-                          <ChevronUp className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 text-gray-500" />
-                        )}
-                      </button>
-                      {expandedWeaknesses[weakness] && weaknessDetails[weakness] && (
-                        <div className="px-3 py-2 bg-white/50 dark:bg-black/5 border-t border-red-100 dark:border-red-900/30 text-sm">
-                          {weaknessDetails[weakness]}
-                        </div>
+                        <span>{strength}</span>
+                        {expandedStrength === strength ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </Button>
+                      
+                      {expandedStrength === strength && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-sm text-muted-foreground p-2 pl-3 border-l-2 ml-2"
+                        >
+                          {result.strengthDetails[strength]}
+                        </motion.div>
                       )}
-                    </motion.li>
+                    </div>
                   ))}
-                </ul>
-              </div>
+                  
+                  {!isPremium && hiddenStrengthsCount > 0 && (
+                    <div className="flex items-center justify-center py-2 border-t border-dashed">
+                      <span className="text-sm text-primary flex items-center">
+                        <Lock className="h-3 w-3 mr-1.5" />
+                        {hiddenStrengthsCount} more strengths with Premium
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </div>
+
+            <div>
+              <Button
+                variant="ghost"
+                className="w-full justify-between mb-2 bg-muted/40"
+                onClick={() => setIsWeaknessesOpen(!isWeaknessesOpen)}
+              >
+                <span className="font-medium">Weaknesses</span>
+                {isWeaknessesOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </Button>
+              
+              {isWeaknessesOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-md border p-4 space-y-3"
+                >
+                  {visibleWeaknesses.map((weakness, index) => (
+                    <div key={index} className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-between p-2 h-auto text-left font-normal"
+                        onClick={() => toggleWeaknessExpansion(weakness)}
+                      >
+                        <span>{weakness}</span>
+                        {expandedWeakness === weakness ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </Button>
+                      
+                      {expandedWeakness === weakness && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-sm text-muted-foreground p-2 pl-3 border-l-2 ml-2"
+                        >
+                          {result.weaknessDetails[weakness]}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {!isPremium && hiddenWeaknessesCount > 0 && (
+                    <div className="flex items-center justify-center py-2 border-t border-dashed">
+                      <span className="text-sm text-primary flex items-center">
+                        <Lock className="h-3 w-3 mr-1.5" />
+                        {hiddenWeaknessesCount} more weaknesses with Premium
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 };
