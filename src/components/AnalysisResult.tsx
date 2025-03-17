@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,16 +64,31 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
       <CardContent className="pt-6 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
-            <div className="h-48">
-              <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
+              <ul className="space-y-2 list-disc list-inside text-sm text-muted-foreground">
+                {isPremium
+                  ? result.recommendations.map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))
+                  : result.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))}
+                
+                {!isPremium && result.recommendations.length > 3 && (
+                  <li className="flex items-center text-primary font-medium">
+                    <Lock className="h-3 w-3 mr-1.5" />
+                    <span>{result.recommendations.length - 3} more recommendations with Premium</span>
+                  </li>
+                )}
+              </ul>
             </div>
             
             {!isPremium && (
-              <div className="mt-4 flex justify-center">
+              <div className="mt-6">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="text-xs group">
+                    <Button variant="outline" className="w-full text-sm group">
                       <Lock className="h-3 w-3 mr-1 group-hover:hidden" />
                       <Crown className="h-3 w-3 mr-1 hidden group-hover:block text-amber-500" />
                       <span className="group-hover:text-amber-500">Unlock All Metrics</span>
@@ -96,26 +112,6 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                 </Dialog>
               </div>
             )}
-            
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
-              <ul className="space-y-2 list-disc list-inside text-sm text-muted-foreground">
-                {isPremium
-                  ? result.recommendations.map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))
-                  : result.recommendations.slice(0, 3).map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))}
-                
-                {!isPremium && result.recommendations.length > 3 && (
-                  <li className="flex items-center text-primary font-medium">
-                    <Lock className="h-3 w-3 mr-1.5" />
-                    <span>{result.recommendations.length - 3} more recommendations with Premium</span>
-                  </li>
-                )}
-              </ul>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -229,6 +225,12 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                   )}
                 </motion.div>
               )}
+            </div>
+            
+            {/* SEO Metrics Chart moved here */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
+              <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />
             </div>
           </div>
         </div>
