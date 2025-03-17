@@ -1,4 +1,3 @@
-
 export interface SEOMetrics {
   length: number;
   hasKeywords: boolean;
@@ -17,6 +16,7 @@ export interface AnalysisResult {
   weaknesses: string[];
   strengthDetails: Record<string, string>;
   weaknessDetails: Record<string, string>;
+  recommendationDetails?: Record<string, string>;
 }
 
 export interface DomainComparison {

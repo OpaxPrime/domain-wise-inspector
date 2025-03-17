@@ -19,8 +19,10 @@ interface AnalysisResultViewProps {
 export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResultViewProps) => {
   const [isStrengthsOpen, setIsStrengthsOpen] = useState(false);
   const [isWeaknessesOpen, setIsWeaknessesOpen] = useState(false);
+  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [expandedStrength, setExpandedStrength] = useState<string | null>(null);
   const [expandedWeakness, setExpandedWeakness] = useState<string | null>(null);
+  const [expandedRecommendation, setExpandedRecommendation] = useState<string | null>(null);
 
   const toggleStrengthExpansion = (strength: string) => {
     setExpandedStrength(expandedStrength === strength ? null : strength);
@@ -30,11 +32,17 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
     setExpandedWeakness(expandedWeakness === weakness ? null : weakness);
   };
 
+  const toggleRecommendationExpansion = (recommendation: string) => {
+    setExpandedRecommendation(expandedRecommendation === recommendation ? null : recommendation);
+  };
+
   // Show only 3 strengths and 2 weaknesses for free users
   const visibleStrengths = isPremium ? result.strengths : result.strengths.slice(0, 3);
   const visibleWeaknesses = isPremium ? result.weaknesses : result.weaknesses.slice(0, 2);
+  const visibleRecommendations = isPremium ? result.recommendations : result.recommendations.slice(0, 3);
   const hiddenStrengthsCount = result.strengths.length - visibleStrengths.length;
   const hiddenWeaknessesCount = result.weaknesses.length - visibleWeaknesses.length;
+  const hiddenRecommendationsCount = result.recommendations.length - visibleRecommendations.length;
 
   // Score color logic based on score value
   const getScoreColor = (score: number) => {
@@ -65,23 +73,60 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
-              <ul className="space-y-2 list-disc list-inside text-sm text-muted-foreground">
-                {isPremium
-                  ? result.recommendations.map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))
-                  : result.recommendations.slice(0, 3).map((rec, i) => (
-                      <li key={i}>{rec}</li>
-                    ))}
-                
-                {!isPremium && result.recommendations.length > 3 && (
-                  <li className="flex items-center text-primary font-medium">
-                    <Lock className="h-3 w-3 mr-1.5" />
-                    <span>{result.recommendations.length - 3} more recommendations with Premium</span>
-                  </li>
-                )}
-              </ul>
+              <Button
+                variant="ghost"
+                className="w-full justify-between mb-2 bg-muted/40"
+                onClick={() => setIsRecommendationsOpen(!isRecommendationsOpen)}
+              >
+                <span className="font-medium">Recommendations</span>
+                {isRecommendationsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </Button>
+              
+              {isRecommendationsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="rounded-md border p-4 space-y-3"
+                >
+                  {visibleRecommendations.map((recommendation, index) => (
+                    <div key={index} className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-between p-2 h-auto text-left font-normal"
+                        onClick={() => toggleRecommendationExpansion(recommendation)}
+                      >
+                        <span>{recommendation}</span>
+                        {expandedRecommendation === recommendation ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </Button>
+                      
+                      {expandedRecommendation === recommendation && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="text-sm text-muted-foreground p-2 pl-3 border-l-2 ml-2"
+                        >
+                          {result.recommendationDetails?.[recommendation] || 
+                            "Implementing this recommendation will improve your domain's SEO performance and visibility."}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {!isPremium && hiddenRecommendationsCount > 0 && (
+                    <div className="flex items-center justify-center py-2 border-t border-dashed">
+                      <span className="text-sm text-primary flex items-center">
+                        <Lock className="h-3 w-3 mr-1.5" />
+                        {hiddenRecommendationsCount} more recommendations with Premium
+                      </span>
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </div>
             
             {!isPremium && (
