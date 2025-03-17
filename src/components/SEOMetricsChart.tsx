@@ -72,6 +72,7 @@ export const SEOMetricsChart = ({ metrics, isPremium = false }: SEOMetricsChartP
               domain={[0, 10]}
               tick={{ fill: "var(--foreground)" }}
               axisLine={false}
+              tickFormatter={() => ""}
             />
             <Radar
               name="SEO Metrics"
