@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -133,8 +134,8 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                         className="w-full justify-between p-2 h-auto text-left font-normal"
                         onClick={() => toggleRecommendationExpansion(recommendation)}
                       >
-                        <span>{recommendation}</span>
-                        {expandedRecommendation === recommendation ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        <span className="line-clamp-1 text-left mr-2">{recommendation}</span>
+                        {expandedRecommendation === recommendation ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
                       </Button>
                       
                       {expandedRecommendation === recommendation && (
@@ -221,8 +222,8 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                         className="w-full justify-between p-2 h-auto text-left font-normal"
                         onClick={() => toggleStrengthExpansion(strength)}
                       >
-                        <span>{strength}</span>
-                        {expandedStrength === strength ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        <span className="line-clamp-1 text-left mr-2">{strength}</span>
+                        {expandedStrength === strength ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
                       </Button>
                       
                       {expandedStrength === strength && (
@@ -277,8 +278,8 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                         className="w-full justify-between p-2 h-auto text-left font-normal"
                         onClick={() => toggleWeaknessExpansion(weakness)}
                       >
-                        <span>{weakness}</span>
-                        {expandedWeakness === weakness ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        <span className="line-clamp-1 text-left mr-2">{weakness}</span>
+                        {expandedWeakness === weakness ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
                       </Button>
                       
                       {expandedWeakness === weakness && (
