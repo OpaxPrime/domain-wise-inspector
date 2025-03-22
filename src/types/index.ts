@@ -1,3 +1,4 @@
+
 export interface SEOMetrics {
   length: number;
   hasKeywords: boolean;
@@ -6,6 +7,13 @@ export interface SEOMetrics {
   keywordPlacement: number;
   domainExtension: number;
   overallScore: number;
+}
+
+export interface DomainPricing {
+  available: boolean;
+  price?: number;
+  currency?: string;
+  registrar?: string;
 }
 
 export interface AnalysisResult {
@@ -17,6 +25,7 @@ export interface AnalysisResult {
   strengthDetails: Record<string, string>;
   weaknessDetails: Record<string, string>;
   recommendationDetails?: Record<string, string>;
+  pricing?: DomainPricing;
 }
 
 export interface DomainComparison {

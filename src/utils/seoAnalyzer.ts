@@ -1,4 +1,5 @@
 import { AnalysisResult, DomainComparison, SEOMetrics } from "@/types";
+import { getDomainPricing } from "./domainPricingService";
 
 // Common keywords that might be beneficial for SEO
 const SEO_FRIENDLY_KEYWORDS = [
@@ -24,7 +25,7 @@ const TLD_SCORES: Record<string, number> = {
   'shop': 7
 };
 
-export const analyzeDomain = (domain: string): AnalysisResult => {
+export const analyzeDomain = async (domain: string): Promise<AnalysisResult> => {
   // Clean the domain (remove protocol, www, etc.)
   const cleanDomain = cleanDomainName(domain);
   if (!cleanDomain) {
@@ -40,21 +41,42 @@ export const analyzeDomain = (domain: string): AnalysisResult => {
   const recommendations = generateRecommendations(metrics, name, extension);
   const { strengths, strengthDetails } = identifyStrengths(metrics, name, extension);
   const { weaknesses, weaknessDetails } = identifyWeaknesses(metrics, name, extension);
+  const recommendationDetails = generateRecommendationDetails(recommendations, metrics, name, extension);
 
-  return {
-    domain: cleanDomain,
-    metrics,
-    recommendations,
-    strengths,
-    weaknesses,
-    strengthDetails,
-    weaknessDetails
-  };
+  // Fetch domain pricing
+  try {
+    const pricing = await getDomainPricing(cleanDomain);
+    
+    return {
+      domain: cleanDomain,
+      metrics,
+      recommendations,
+      strengths,
+      weaknesses,
+      strengthDetails,
+      weaknessDetails,
+      recommendationDetails,
+      pricing
+    };
+  } catch (error) {
+    console.error("Error fetching domain pricing:", error);
+    
+    return {
+      domain: cleanDomain,
+      metrics,
+      recommendations,
+      strengths,
+      weaknesses,
+      strengthDetails,
+      weaknessDetails,
+      recommendationDetails
+    };
+  }
 };
 
-export const compareDomains = (domains: string[]): DomainComparison => {
+export const compareDomains = async (domains: string[]): Promise<DomainComparison> => {
   // Analyze each domain
-  const results = domains.map(domain => analyzeDomain(domain));
+  const results = await Promise.all(domains.map(domain => analyzeDomain(domain)));
   
   // Find the domain with the highest overall score
   let bestChoice = '';
@@ -268,6 +290,43 @@ function generateRecommendations(metrics: SEOMetrics, name: string, extension: s
   }
   
   return recommendations;
+}
+
+function generateRecommendationDetails(
+  recommendations: string[], 
+  metrics: SEOMetrics, 
+  name: string, 
+  extension: string
+): Record<string, string> {
+  const details: Record<string, string> = {};
+  
+  recommendations.forEach(recommendation => {
+    let detail = "";
+    
+    if (recommendation.includes("longer domain")) {
+      detail = "Longer domain names (6-14 characters) provide more room for keywords while still being memorable. This can improve your chances of ranking for relevant terms.";
+    } else if (recommendation.includes("Shorter domain")) {
+      detail = "Shorter domain names are easier to remember, type, and communicate verbally. They generally have higher recall value and can reduce the chance of users mistyping your URL.";
+    } else if (recommendation.includes("keywords in your domain")) {
+      detail = "Including relevant industry keywords in your domain name can help search engines understand your website's focus. While not as impactful as quality content, it can provide a small SEO advantage.";
+    } else if (recommendation.includes("memorable domain")) {
+      detail = "Memorable domains lead to more direct traffic, lower bounce rates, and stronger brand recognition. Consider using pronounceable words without hyphens or numbers to improve memorability.";
+    } else if (recommendation.includes("unique name")) {
+      detail = "A distinctive brand name helps you stand out from competitors and creates stronger brand recognition. Unique domains are also easier to trademark and protect legally.";
+    } else if (recommendation.includes("keywords at the beginning")) {
+      detail = "Search engines give slightly more weight to keywords appearing at the beginning of a domain name. This can provide a small SEO advantage when competing for relevant keyword rankings.";
+    } else if (recommendation.includes(".com domains")) {
+      detail = ".com domains are the most recognized and trusted TLD. They typically receive higher click-through rates and are easier for users to remember than alternative extensions.";
+    } else if (recommendation.includes("strong domain name")) {
+      detail = "Your domain has excellent SEO characteristics. Now focus on creating high-quality content, building relevant backlinks, and optimizing on-page SEO elements to maximize your website's search performance.";
+    }
+    
+    if (detail) {
+      details[recommendation] = detail;
+    }
+  });
+  
+  return details;
 }
 
 function identifyStrengths(metrics: SEOMetrics, name: string, extension: string): { strengths: string[], strengthDetails: Record<string, string> } {

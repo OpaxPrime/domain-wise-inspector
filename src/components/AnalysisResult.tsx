@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Lock, Crown } from "lucide-react";
+import { ChevronDown, ChevronUp, Lock, Crown, Check, X } from "lucide-react";
 import { SEOMetricsChart } from "./SEOMetricsChart";
 import { AnalysisResult } from "@/types";
 import { motion } from "framer-motion";
@@ -57,6 +57,17 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
     window.open(STRIPE_CHECKOUT_URL, '_blank');
   };
 
+  // Format price display
+  const formatPrice = (price?: number, currency: string = "USD") => {
+    if (price === undefined) return "N/A";
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30 pb-4">
@@ -68,6 +79,31 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
             </Badge>
           </div>
         </div>
+        
+        {/* Domain availability and pricing information */}
+        {result.pricing && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Badge variant={result.pricing.available ? "outline" : "secondary"} className="font-normal">
+              {result.pricing.available ? (
+                <div className="flex items-center">
+                  <Check className="h-3 w-3 mr-1 text-green-500" />
+                  <span>Available: {formatPrice(result.pricing.price, result.pricing.currency)}</span>
+                </div>
+              ) : (
+                <div className="flex items-center">
+                  <X className="h-3 w-3 mr-1 text-red-500" />
+                  <span>Not Available</span>
+                </div>
+              )}
+            </Badge>
+            
+            {result.pricing.registrar && result.pricing.available && (
+              <Badge variant="outline" className="font-normal">
+                Via: {result.pricing.registrar}
+              </Badge>
+            )}
+          </div>
+        )}
       </CardHeader>
       <CardContent className="pt-6 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -272,7 +308,7 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
               )}
             </div>
             
-            {/* SEO Metrics Chart moved here */}
+            {/* SEO Metrics Chart */}
             <div className="mt-6">
               <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
               <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />

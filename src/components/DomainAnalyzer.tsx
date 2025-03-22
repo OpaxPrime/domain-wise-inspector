@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,13 +83,19 @@ export const DomainAnalyzer = () => {
     setComparison(null);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Show realistic loading time while fetching domain prices
+      setTimeout(() => {
+        toast({
+          title: "Analyzing domains...",
+          description: "Fetching pricing information and analyzing SEO metrics",
+        });
+      }, 1000);
       
       if (validDomains.length === 1) {
-        const result = analyzeDomain(validDomains[0]);
+        const result = await analyzeDomain(validDomains[0]);
         setResults([result]);
       } else {
-        const comparisonResult = compareDomains(validDomains);
+        const comparisonResult = await compareDomains(validDomains);
         setResults(comparisonResult.domains);
         setComparison(comparisonResult);
       }
