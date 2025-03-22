@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,12 +91,12 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
               ) : (
                 <div className="flex items-center">
                   <X className="h-3 w-3 mr-1 text-red-500" />
-                  <span>Not Available</span>
+                  <span>Not Available: {formatPrice(result.pricing.price, result.pricing.currency)}</span>
                 </div>
               )}
             </Badge>
             
-            {result.pricing.registrar && result.pricing.available && (
+            {result.pricing.registrar && (
               <Badge variant="outline" className="font-normal">
                 Via: {result.pricing.registrar}
               </Badge>

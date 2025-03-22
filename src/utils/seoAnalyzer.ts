@@ -41,7 +41,7 @@ export const analyzeDomain = async (domain: string): Promise<AnalysisResult> => 
   const recommendations = generateRecommendations(metrics, name, extension);
   const { strengths, strengthDetails } = identifyStrengths(metrics, name, extension);
   const { weaknesses, weaknessDetails } = identifyWeaknesses(metrics, name, extension);
-  const recommendationDetails = generateRecommendationDetails(recommendations, metrics, name, extension);
+  const recommendationDetails = generateEnhancedRecommendationDetails(recommendations, metrics, name, extension);
 
   // Fetch domain pricing
   try {
@@ -292,7 +292,7 @@ function generateRecommendations(metrics: SEOMetrics, name: string, extension: s
   return recommendations;
 }
 
-function generateRecommendationDetails(
+function generateEnhancedRecommendationDetails(
   recommendations: string[], 
   metrics: SEOMetrics, 
   name: string, 
@@ -301,28 +301,34 @@ function generateRecommendationDetails(
   const details: Record<string, string> = {};
   
   recommendations.forEach(recommendation => {
-    let detail = "";
-    
     if (recommendation.includes("longer domain")) {
-      detail = "Longer domain names (6-14 characters) provide more room for keywords while still being memorable. This can improve your chances of ranking for relevant terms.";
+      details[recommendation] = 
+        "From a Functional Purpose perspective, your domain name is the foundation of your online identity and should effectively communicate your brand's essence while supporting SEO goals. The current length is suboptimal for keyword inclusion, limiting your ability to rank for relevant terms. At the Abstract Function level, a more strategically sized domain (6-14 characters) provides the ideal balance between memorability and search engine relevance, allowing for proper keyword integration while remaining easy to recall. In practical implementation (Physical Form), consider adding relevant industry terms or descriptive modifiers to your current domain that align with your target audience's search patterns.";
     } else if (recommendation.includes("Shorter domain")) {
-      detail = "Shorter domain names are easier to remember, type, and communicate verbally. They generally have higher recall value and can reduce the chance of users mistyping your URL.";
+      details[recommendation] = 
+        "At the Functional Purpose level, your domain name serves as the primary access point to your digital presence and should minimize user friction. The current length exceeds the optimal character count, creating potential barriers to memorability and direct navigation. The underlying Abstract Function principle is that shorter domains reduce cognitive load for users, leading to improved brand recall and word-of-mouth sharing. From a Generalized Function standpoint, lengthy domains increase the likelihood of typographical errors when users manually enter your URL, potentially resulting in lost traffic. Consider removing unnecessary words or using abbreviations to create a more concise and memorable domain identity.";
     } else if (recommendation.includes("keywords in your domain")) {
-      detail = "Including relevant industry keywords in your domain name can help search engines understand your website's focus. While not as impactful as quality content, it can provide a small SEO advantage.";
+      details[recommendation] = 
+        "From a Functional Purpose perspective, your domain should serve as both a brand identifier and a relevance signal to search engines. Currently, it lacks specific industry keywords that would help establish topical authority. The Abstract Function principle at work is that strategic keyword inclusion can provide contextual clues to both users and search algorithms about your website's focus area. At the Physical Function level, incorporating 1-2 relevant keywords from your industry would create stronger semantic connections between user search queries and your domain. Consider adding terms like '" + SEO_FRIENDLY_KEYWORDS.slice(0, 3).join("', '") + "' if they align with your business focus.";
     } else if (recommendation.includes("memorable domain")) {
-      detail = "Memorable domains lead to more direct traffic, lower bounce rates, and stronger brand recognition. Consider using pronounceable words without hyphens or numbers to improve memorability.";
+      details[recommendation] = 
+        "At the core Functional Purpose level, your domain should facilitate easy recall and return visits, functioning as a permanent mental anchor for your brand. The current domain structure scores below optimal on memorability metrics, which may impede organic brand building. From an Abstract Function perspective, memorable domains prioritize phonetic simplicity, avoid special characters, and utilize linguistic patterns that resonate with human memory systems. Examining the Physical Form of your domain, consider removing hyphens, numbers, or unusual spellings that create cognitive friction. A more memorable alternative might use alliteration, rhyming elements, or common word patterns that create stronger mental associations.";
     } else if (recommendation.includes("unique name")) {
-      detail = "A distinctive brand name helps you stand out from competitors and creates stronger brand recognition. Unique domains are also easier to trademark and protect legally.";
+      details[recommendation] = 
+        "Your domain's primary Functional Purpose includes establishing a distinctive brand identity that stands apart from competitors and creates lasting impressions. The current name lacks sufficient uniqueness to achieve strong brand differentiation in your market space. At the Abstract Function level, brand distinctiveness is a foundational principle that enables more efficient marketing, stronger trademark protection, and reduced confusion in the marketplace. From a Physical Form perspective, consider creating a synthetic word, using unexpected word combinations, or incorporating creative prefixes/suffixes that maintain pronunciation clarity while establishing uniqueness. This approach will significantly strengthen your brand's memorability and legal defensibility.";
     } else if (recommendation.includes("keywords at the beginning")) {
-      detail = "Search engines give slightly more weight to keywords appearing at the beginning of a domain name. This can provide a small SEO advantage when competing for relevant keyword rankings.";
+      details[recommendation] = 
+        "From a Functional Purpose standpoint, your domain should optimize for both human usability and search algorithm interpretation. While your domain contains relevant keywords, their placement is suboptimal for maximum SEO impact. The Abstract Function principle at work is that search engines typically give more weight to terms appearing earlier in a domain name when determining relevance. At the Physical Function level, restructuring your domain to place primary keywords at the beginning would improve keyword prominence scores and potentially boost rankings for those terms. Consider reorganizing your domain structure to prioritize your most strategically valuable keyword at the beginning, followed by any secondary terms or brand identifiers.";
     } else if (recommendation.includes(".com domains")) {
-      detail = ".com domains are the most recognized and trusted TLD. They typically receive higher click-through rates and are easier for users to remember than alternative extensions.";
+      details[recommendation] = 
+        "At the Functional Purpose level, your domain extension should maximize user trust and accessibility across all contexts. While alternative TLDs can work, the ." + extension + " extension currently used lacks the universal recognition of .com. The Abstract Function principle is that familiar patterns reduce cognitive friction and build inherent trust, with .com being the most recognized pattern globally. From a Physical Form perspective, users encountering unfamiliar TLDs may experience hesitation or question legitimacy. Consider securing the .com version of your domain name, even if it requires slight modification to your preferred name, as the trust benefits typically outweigh the costs of a less exact domain match.";
     } else if (recommendation.includes("strong domain name")) {
-      detail = "Your domain has excellent SEO characteristics. Now focus on creating high-quality content, building relevant backlinks, and optimizing on-page SEO elements to maximize your website's search performance.";
-    }
-    
-    if (detail) {
-      details[recommendation] = detail;
+      details[recommendation] = 
+        "Your domain excels at its core Functional Purpose of establishing a strong online foundation, scoring well across key evaluation metrics. From an Abstract Function perspective, your domain successfully balances the competing priorities of memorability, brandability, and search relevance – the trifecta of domain name excellence. At the Generalized Function level, this strong domain will support multiple business objectives including direct navigation, brand recall, and search discovery. To maximize this solid foundation, focus now on reinforcing your domain strength with complementary strategies: develop high-quality content that deeply covers your topic area, build relevant backlinks from authoritative sites in your industry, and ensure technical SEO fundamentals are properly implemented across your site architecture.";
+    } else {
+      // Default detailed description for any other recommendations
+      details[recommendation] = 
+        "This recommendation addresses a critical aspect of your domain strategy that impacts both user experience and search performance. At the Functional Purpose level, domains must balance technical optimization with human-centered design to create sustainable online success. The Abstract Function principles suggest that strategic improvements in this area will yield compounding benefits across multiple performance metrics over time. From a practical implementation standpoint, addressing this specific recommendation should be prioritized as it represents a foundational element that subsequent optimization efforts will build upon.";
     }
   });
   
@@ -383,7 +389,7 @@ function identifyWeaknesses(metrics: SEOMetrics, name: string, extension: string
     weaknessDetails["Very short domain name"] = "While short domains are easy to type, extremely short domain names may limit keyword inclusion opportunities. This could make it harder for your site to rank for relevant industry terms through the domain name alone.";
   } else if (metrics.length > 12) {
     weaknesses.push("Lengthy domain name");
-    weaknessDetails["Lengthy domain name"] = "Longer domain names can be harder for users to remember and type correctly, potentially leading to reduced direct traffic. They can also be more prone to typos which might direct users to other websites.";
+    weaknessDetails["Lengthy domain name"] = "Longer domain names can be harder for users to remember and type correctly, potentially leading to reduced direct traffic. They can also be more prone to typos which might direct users to competitor sites.";
   }
   
   if (!metrics.hasKeywords) {
