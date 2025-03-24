@@ -90,7 +90,7 @@ export function AuthDialogs({ open, onOpenChange }: AuthDialogsProps) {
                 required
               />
             </div>
-            <DialogFooter className="flex-col gap-3 sm:gap-0">
+            <DialogFooter className="flex flex-col space-y-2 sm:space-y-0">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -101,12 +101,12 @@ export function AuthDialogs({ open, onOpenChange }: AuthDialogsProps) {
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full flex items-center justify-center" 
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Sign in with Google
+                <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Sign in with Google</span>
               </Button>
               <div className="mt-2 text-center text-sm">
                 Don't have an account?{" "}
@@ -154,7 +154,7 @@ export function AuthDialogs({ open, onOpenChange }: AuthDialogsProps) {
                 required
               />
             </div>
-            <DialogFooter className="flex-col gap-3 sm:gap-0">
+            <DialogFooter className="flex flex-col space-y-2 sm:space-y-0">
               <Button 
                 type="submit" 
                 className="w-full" 
@@ -165,12 +165,12 @@ export function AuthDialogs({ open, onOpenChange }: AuthDialogsProps) {
               <Button 
                 type="button" 
                 variant="outline" 
-                className="w-full" 
+                className="w-full flex items-center justify-center" 
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
               >
-                <Mail className="mr-2 h-4 w-4" />
-                Sign up with Google
+                <Mail className="mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="truncate">Sign up with Google</span>
               </Button>
               <div className="mt-2 text-center text-sm">
                 Already have an account?{" "}
