@@ -22,13 +22,19 @@ export function AnalyticsInsights({ type, timeFrame, data }: AnalyticsInsightsPr
   const isPremium = user?.tier === "premium";
   
   useEffect(() => {
-    // Simulate loading delay
+    // Only show loading state if data is empty
+    if (data.length === 0) {
+      setLoading(true);
+      return;
+    }
+    
+    // Simulate short loading delay for better UX
     setLoading(true);
     
     const timer = setTimeout(() => {
       generateInsights();
       setLoading(false);
-    }, 1200);
+    }, 800);
     
     return () => clearTimeout(timer);
   }, [type, timeFrame, data]);
@@ -48,14 +54,31 @@ export function AnalyticsInsights({ type, timeFrame, data }: AnalyticsInsightsPr
     }
   };
   
+  const calculateAverage = () => {
+    if (data.length === 0) return 0;
+    return data.reduce((sum, point) => sum + point.value, 0) / data.length;
+  };
+  
+  const calculateGrowthRate = () => {
+    if (data.length < 2) return 0;
+    
+    const firstValue = data[0].value;
+    const lastValue = data[data.length - 1].value;
+    
+    if (firstValue === 0) return 0;
+    return ((lastValue - firstValue) / firstValue * 100).toFixed(1);
+  };
+  
   const generateInsights = () => {
     const trend = calculateTrend();
     const metric = type === "traffic" ? "traffic" : "revenue";
     const metricLabel = type === "traffic" ? "visitors" : "earnings";
+    const average = calculateAverage();
+    const growthRate = calculateGrowthRate();
     
     const trendInsight = {
-      increasing: `Your ${metric} is trending upward over the past ${timeFrame === "daily" ? "few days" : timeFrame === "weekly" ? "few weeks" : "few months"}.`,
-      decreasing: `Your ${metric} has been decreasing over the past ${timeFrame === "daily" ? "few days" : timeFrame === "weekly" ? "few weeks" : "few months"}.`,
+      increasing: `Your ${metric} is trending upward over the ${timeFrame === "daily" ? "past few days" : timeFrame === "weekly" ? "past few weeks" : "past few months"}.`,
+      decreasing: `Your ${metric} has been decreasing over the ${timeFrame === "daily" ? "past few days" : timeFrame === "weekly" ? "past few weeks" : "past few months"}.`,
       stable: `Your ${metric} has remained relatively stable recently.`
     }[trend];
     
@@ -63,7 +86,8 @@ export function AnalyticsInsights({ type, timeFrame, data }: AnalyticsInsightsPr
       trendInsight,
       type === "traffic" ? 
         `Based on current patterns, you can expect between ${Math.round(data[data.length - 1].value * 0.9)} and ${Math.round(data[data.length - 1].value * 1.1)} ${metricLabel} in the next period.` :
-        `Your average ${metric} per period is $${Math.round(data.reduce((sum, point) => sum + point.value, 0) / data.length)}.`,
+        `Your average ${metric} per period is $${Math.round(average)}.`,
+      `Overall growth rate: ${growthRate}% over this ${timeFrame} period.`,
       trend === "increasing" ? 
         `Continue your current strategies to maintain this positive trend.` :
         trend === "decreasing" ? 
@@ -73,18 +97,49 @@ export function AnalyticsInsights({ type, timeFrame, data }: AnalyticsInsightsPr
     
     // Add a premium insight
     if (isPremium) {
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-      const today = new Date();
-      const dayOfWeek = today.getDay();
+      const bestDay = findBestPerformingDay();
       
       insights.push(
         type === "traffic" ?
-          `Your highest ${metric} days are typically ${dayNames[(dayOfWeek + 2) % 7]} and ${dayNames[(dayOfWeek + 4) % 7]}, with ${Math.round(data[data.length - 1].value * 1.2)} average ${metricLabel}.` :
+          `Your highest ${metric} typically occurs on ${bestDay}, with approximately ${Math.round(average * 1.2)} ${metricLabel}.` :
           `Based on seasonal patterns, you might expect a ${Math.round(Math.random() * 15 + 5)}% increase in ${metric} next month.`
       );
     }
     
     setInsights(insights);
+  };
+  
+  const findBestPerformingDay = () => {
+    if (data.length < 7) return "weekends";
+    
+    // Try to find day pattern in the data
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayPerformance = dayNames.map(day => ({ day, value: 0, count: 0 }));
+    
+    data.forEach(point => {
+      const date = new Date(point.date);
+      const dayIndex = date.getDay();
+      dayPerformance[dayIndex].value += point.value;
+      dayPerformance[dayIndex].count += 1;
+    });
+    
+    // Calculate average per day
+    dayPerformance.forEach(day => {
+      if (day.count > 0) {
+        day.value = day.value / day.count;
+      }
+    });
+    
+    // Find best day
+    const bestDay = dayPerformance.reduce((best, current) => 
+      current.value > best.value ? current : best, dayPerformance[0]);
+      
+    // Find second best day  
+    const secondBest = dayPerformance
+      .filter(day => day.day !== bestDay.day)
+      .reduce((best, current) => current.value > best.value ? current : best, { day: "", value: 0, count: 0 });
+    
+    return `${bestDay.day}s and ${secondBest.day}s`;
   };
   
   if (loading) {

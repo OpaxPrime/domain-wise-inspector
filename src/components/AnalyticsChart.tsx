@@ -35,13 +35,34 @@ interface AnalyticsChartProps {
 export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
   const [chartType, setChartType] = useState<"area" | "line">("area");
   const isMobile = useMediaQuery("(max-width: 640px)");
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  
+  useEffect(() => {
+    // Format the data for the chart
+    if (data && data.length > 0) {
+      setChartData(data);
+    } else {
+      // If no data, generate placeholder data
+      const placeholderData = [];
+      for (let i = 0; i < 10; i++) {
+        placeholderData.push({
+          name: `Point ${i+1}`,
+          value: Math.floor(Math.random() * 1000),
+          date: new Date().toISOString()
+        });
+      }
+      setChartData(placeholderData);
+    }
+  }, [data]);
   
   const formatYAxisTick = (value: number): string => {
     if (type === "revenue") {
-      return `$${value.toLocaleString()}`;
+      return `$${value >= 1000 ? (value / 1000).toFixed(1) + 'k' : value}`;
     }
     
-    if (value >= 1000) {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
       return `${(value / 1000).toFixed(1)}k`;
     }
     
@@ -84,6 +105,14 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
     }
   };
   
+  // Custom tooltip formatter to show appropriate values
+  const tooltipFormatter = (value: number) => {
+    if (type === "revenue") {
+      return [`$${value.toLocaleString()}`, "Revenue"];
+    }
+    return [value.toLocaleString(), "Traffic"];
+  };
+  
   return (
     <Card className="p-4">
       <div className="mb-4 flex justify-end">
@@ -101,7 +130,10 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
           className="w-full h-full"
         >
           {chartType === "area" ? (
-            <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+            <AreaChart 
+              data={chartData} 
+              margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="name" 
@@ -114,7 +146,15 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
                 tick={{ fontSize: 12 }}
                 width={isMobile ? 40 : 60}
               />
-              <Tooltip content={<ChartTooltipContent />} />
+              <Tooltip 
+                formatter={tooltipFormatter}
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "6px",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                }}
+              />
               <Area 
                 type="monotone" 
                 dataKey="value" 
@@ -125,7 +165,10 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
               />
             </AreaChart>
           ) : (
-            <LineChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+            <LineChart 
+              data={chartData} 
+              margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey="name" 
@@ -138,7 +181,15 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
                 tick={{ fontSize: 12 }}
                 width={isMobile ? 40 : 60}
               />
-              <Tooltip content={<ChartTooltipContent />} />
+              <Tooltip 
+                formatter={tooltipFormatter}
+                contentStyle={{
+                  backgroundColor: "hsl(var(--background))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "6px",
+                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                }}
+              />
               <Line 
                 type="monotone" 
                 dataKey="value" 

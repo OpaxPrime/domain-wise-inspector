@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { PremiumBanner } from "./PremiumBanner";
 import { DomainGenerator } from "./DomainGenerator";
 import { RevenueTrafficDashboard } from "./RevenueTrafficDashboard";
+import { fetchDomainAnalytics, GeminiAnalyticsResponse } from "@/utils/geminiService";
 
 const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
 
@@ -24,6 +25,8 @@ export const DomainAnalyzer = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<GeminiAnalyticsResponse | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const { toast } = useToast();
   const { user, updateUsage } = useAuth();
   
@@ -86,6 +89,7 @@ export const DomainAnalyzer = () => {
     setResults([]);
     setComparison(null);
     setShowAnalytics(false);
+    setAnalyticsData(null);
 
     try {
       // Show realistic loading time while fetching domain prices
@@ -99,10 +103,40 @@ export const DomainAnalyzer = () => {
       if (validDomains.length === 1) {
         const result = await analyzeDomain(validDomains[0]);
         setResults([result]);
+        
+        // Fetch analytics data for the domain using Gemini API
+        setIsLoadingAnalytics(true);
+        try {
+          const analytics = await fetchDomainAnalytics(validDomains[0]);
+          setAnalyticsData(analytics);
+        } catch (error) {
+          console.error("Failed to fetch analytics data:", error);
+          toast({
+            title: "Analytics data incomplete",
+            description: "Some analytics data could not be loaded",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingAnalytics(false);
+        }
+        
       } else {
         const comparisonResult = await compareDomains(validDomains);
         setResults(comparisonResult.domains);
         setComparison(comparisonResult);
+        
+        // Fetch analytics for the best domain if there is one
+        if (comparisonResult.bestChoice) {
+          setIsLoadingAnalytics(true);
+          try {
+            const analytics = await fetchDomainAnalytics(comparisonResult.bestChoice);
+            setAnalyticsData(analytics);
+          } catch (error) {
+            console.error("Failed to fetch analytics data:", error);
+          } finally {
+            setIsLoadingAnalytics(false);
+          }
+        }
       }
       
       toast({
@@ -305,7 +339,11 @@ export const DomainAnalyzer = () => {
                   transition={{ delay: 0.5, duration: 0.5 }}
                 >
                   <h2 className="text-2xl font-bold mb-6">Projected Performance Analytics</h2>
-                  <RevenueTrafficDashboard />
+                  <RevenueTrafficDashboard 
+                    domain={results.length === 1 ? results[0].domain : comparison?.bestChoice}
+                    analyticsData={analyticsData || undefined}
+                    isLoading={isLoadingAnalytics}
+                  />
                 </motion.div>
               )}
             </motion.div>

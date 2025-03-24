@@ -1,9 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { generateTrafficData, generateRevenueData } from "@/utils/analyticsDataGenerator";
 import { AnalyticsChart } from "./AnalyticsChart";
 import { AnalyticsInsights } from "./AnalyticsInsights";
 import { Badge } from "@/components/ui/badge";
@@ -12,18 +11,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { GeminiAnalyticsResponse } from "@/utils/geminiService";
 
 type TimeFrame = "daily" | "weekly" | "monthly" | "yearly";
 type MetricType = "traffic" | "revenue";
 
-export function RevenueTrafficDashboard() {
+interface RevenueTrafficDashboardProps {
+  domain?: string;
+  analyticsData?: GeminiAnalyticsResponse;
+  isLoading?: boolean;
+}
+
+export function RevenueTrafficDashboard({ 
+  domain, 
+  analyticsData, 
+  isLoading = false 
+}: RevenueTrafficDashboardProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>("monthly");
   const [activeTab, setActiveTab] = useState<MetricType>("traffic");
   const { user } = useAuth();
   const { toast } = useToast();
-  
-  const trafficData = generateTrafficData(timeFrame);
-  const revenueData = generateRevenueData(timeFrame);
   
   const isPremium = user?.tier === "premium";
   
@@ -39,17 +46,6 @@ export function RevenueTrafficDashboard() {
     setTimeFrame(value as TimeFrame);
   };
   
-  const calculateChange = (data: any[]) => {
-    if (data.length < 2) return 0;
-    const lastValue = data[data.length - 1].value;
-    const previousValue = data[data.length - 2].value;
-    if (previousValue === 0) return 100;
-    return ((lastValue - previousValue) / previousValue * 100).toFixed(1);
-  };
-  
-  const trafficChange = calculateChange(trafficData);
-  const revenueChange = calculateChange(revenueData);
-  
   const handleUpgrade = () => {
     toast({
       title: "Upgrade to Premium",
@@ -58,8 +54,21 @@ export function RevenueTrafficDashboard() {
     // Add premium upgrade link here
   };
 
+  // Use data from the API if available, otherwise use default values
+  const trafficData = analyticsData?.trafficData[timeFrame] || [];
+  const revenueData = analyticsData?.revenueData[timeFrame] || [];
+  
+  const {
+    totalTraffic = 0,
+    conversionRate = 0,
+    totalRevenue = 0,
+    averageRevenuePerUser = 0,
+    trafficChange = 0,
+    revenueChange = 0
+  } = analyticsData?.metrics || {};
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="max-w-6xl mx-auto py-8">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -67,18 +76,24 @@ export function RevenueTrafficDashboard() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">28,419</div>
-            <div className="flex items-center text-xs mt-1">
-              {Number(trafficChange) > 0 ? (
-                <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              ) : (
-                <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-              )}
-              <span className={Number(trafficChange) > 0 ? "text-green-500" : "text-red-500"}>
-                {trafficChange}%
-              </span>
-              <span className="text-muted-foreground ml-1">from previous period</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalTraffic.toLocaleString()}</div>
+                <div className="flex items-center text-xs mt-1">
+                  {Number(trafficChange) > 0 ? (
+                    <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
+                  )}
+                  <span className={Number(trafficChange) > 0 ? "text-green-500" : "text-red-500"}>
+                    {trafficChange}%
+                  </span>
+                  <span className="text-muted-foreground ml-1">from previous period</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -87,12 +102,18 @@ export function RevenueTrafficDashboard() {
             <InfoIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.3%</div>
-            <div className="flex items-center text-xs mt-1">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500">0.2%</span>
-              <span className="text-muted-foreground ml-1">from previous period</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{conversionRate.toFixed(1)}%</div>
+                <div className="flex items-center text-xs mt-1">
+                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                  <span className="text-green-500">0.2%</span>
+                  <span className="text-muted-foreground ml-1">from previous period</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -101,18 +122,24 @@ export function RevenueTrafficDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$12,543</div>
-            <div className="flex items-center text-xs mt-1">
-              {Number(revenueChange) > 0 ? (
-                <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              ) : (
-                <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
-              )}
-              <span className={Number(revenueChange) > 0 ? "text-green-500" : "text-red-500"}>
-                {revenueChange}%
-              </span>
-              <span className="text-muted-foreground ml-1">from previous period</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+                <div className="flex items-center text-xs mt-1">
+                  {Number(revenueChange) > 0 ? (
+                    <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
+                  )}
+                  <span className={Number(revenueChange) > 0 ? "text-green-500" : "text-red-500"}>
+                    {revenueChange}%
+                  </span>
+                  <span className="text-muted-foreground ml-1">from previous period</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -121,12 +148,18 @@ export function RevenueTrafficDashboard() {
             <InfoIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$0.44</div>
-            <div className="flex items-center text-xs mt-1">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500">7.2%</span>
-              <span className="text-muted-foreground ml-1">from previous period</span>
-            </div>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">${averageRevenuePerUser.toFixed(2)}</div>
+                <div className="flex items-center text-xs mt-1">
+                  <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+                  <span className="text-green-500">7.2%</span>
+                  <span className="text-muted-foreground ml-1">from previous period</span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -135,9 +168,9 @@ export function RevenueTrafficDashboard() {
         <Card className="md:col-span-5">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Analytics</CardTitle>
+              <CardTitle>Analytics{domain ? ` for ${domain}` : ''}</CardTitle>
               <CardDescription>
-                Your domain's {activeTab} metrics over time
+                {domain ? `${domain}'s` : 'Your domain\'s'} {activeTab} metrics over time
                 {!isPremium && timeFrame !== "monthly" && (
                   <Badge variant="outline" className="ml-2 bg-primary/10 text-primary">
                     Premium Preview
@@ -160,26 +193,35 @@ export function RevenueTrafficDashboard() {
             </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="traffic" value={activeTab} onValueChange={(value) => setActiveTab(value as MetricType)}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="traffic">Traffic</TabsTrigger>
-                <TabsTrigger value="revenue">Revenue</TabsTrigger>
-              </TabsList>
-              <TabsContent value="traffic" className="space-y-4">
-                <AnalyticsChart 
-                  data={trafficData} 
-                  timeFrame={timeFrame} 
-                  type="traffic" 
-                />
-              </TabsContent>
-              <TabsContent value="revenue" className="space-y-4">
-                <AnalyticsChart 
-                  data={revenueData} 
-                  timeFrame={timeFrame}
-                  type="revenue" 
-                />
-              </TabsContent>
-            </Tabs>
+            {isLoading ? (
+              <div className="h-[300px] flex items-center justify-center bg-muted/40 rounded-md">
+                <div className="text-center">
+                  <Skeleton className="h-4 w-40 mx-auto mb-2" />
+                  <Skeleton className="h-3 w-32 mx-auto" />
+                </div>
+              </div>
+            ) : (
+              <Tabs defaultValue="traffic" value={activeTab} onValueChange={(value) => setActiveTab(value as MetricType)}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="traffic">Traffic</TabsTrigger>
+                  <TabsTrigger value="revenue">Revenue</TabsTrigger>
+                </TabsList>
+                <TabsContent value="traffic" className="space-y-4">
+                  <AnalyticsChart 
+                    data={trafficData} 
+                    timeFrame={timeFrame} 
+                    type="traffic" 
+                  />
+                </TabsContent>
+                <TabsContent value="revenue" className="space-y-4">
+                  <AnalyticsChart 
+                    data={revenueData} 
+                    timeFrame={timeFrame}
+                    type="revenue" 
+                  />
+                </TabsContent>
+              </Tabs>
+            )}
             
             {!isPremium && timeFrame !== "monthly" && (
               <div className="mt-4 p-3 bg-muted/40 rounded-md text-sm">
@@ -205,11 +247,19 @@ export function RevenueTrafficDashboard() {
             <CardDescription>Smart analysis of your data</CardDescription>
           </CardHeader>
           <CardContent>
-            <AnalyticsInsights 
-              type={activeTab} 
-              timeFrame={timeFrame}
-              data={activeTab === "traffic" ? trafficData : revenueData}
-            />
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+              </div>
+            ) : (
+              <AnalyticsInsights 
+                type={activeTab} 
+                timeFrame={timeFrame}
+                data={activeTab === "traffic" ? trafficData : revenueData}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
