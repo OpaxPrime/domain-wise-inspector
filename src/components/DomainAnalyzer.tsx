@@ -13,6 +13,7 @@ import { AnalysisResultView } from "./AnalysisResult";
 import { useAuth } from "@/context/AuthContext";
 import { PremiumBanner } from "./PremiumBanner";
 import { DomainGenerator } from "./DomainGenerator";
+import { RevenueTrafficDashboard } from "./RevenueTrafficDashboard";
 
 const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
 
@@ -22,6 +23,7 @@ export const DomainAnalyzer = () => {
   const [comparison, setComparison] = useState<DomainComparison | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const { toast } = useToast();
   const { user, updateUsage } = useAuth();
   
@@ -83,6 +85,7 @@ export const DomainAnalyzer = () => {
     setIsAnalyzing(true);
     setResults([]);
     setComparison(null);
+    setShowAnalytics(false);
 
     try {
       // Show realistic loading time while fetching domain prices
@@ -106,6 +109,9 @@ export const DomainAnalyzer = () => {
         title: "Analysis complete",
         description: `Successfully analyzed ${validDomains.length} domain${validDomains.length > 1 ? 's' : ''}`,
       });
+      
+      // Show analytics after analysis is complete
+      setShowAnalytics(true);
     } catch (error) {
       console.error("Analysis error:", error);
       toast({
@@ -290,6 +296,18 @@ export const DomainAnalyzer = () => {
                   />
                 ))}
               </div>
+              
+              {/* Revenue and Traffic Analytics Dashboard */}
+              {showAnalytics && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
+                >
+                  <h2 className="text-2xl font-bold mb-6">Projected Performance Analytics</h2>
+                  <RevenueTrafficDashboard />
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

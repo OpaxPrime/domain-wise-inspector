@@ -4,8 +4,6 @@ import { Hero } from "@/components/Hero";
 import { DomainAnalyzer } from "@/components/DomainAnalyzer";
 import { Separator } from "@/components/ui/separator";
 import { UserMenu } from "@/components/UserMenu";
-import { Link } from "react-router-dom";
-import { BarChart3 } from "lucide-react";
 
 const Index = () => {
   return (
@@ -13,13 +11,6 @@ const Index = () => {
       <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
         <div className="font-semibold text-lg">Domain SEO Analyzer</div>
         <div className="flex items-center gap-4">
-          <Link 
-            to="/analysis" 
-            className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <BarChart3 className="h-4 w-4 mr-1" />
-            <span>Analytics</span>
-          </Link>
           <UserMenu />
         </div>
       </div>
