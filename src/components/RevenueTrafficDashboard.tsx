@@ -5,12 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsChart } from "./AnalyticsChart";
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon, TrendingUp, TrendingDown, DollarSign, Users } from "lucide-react";
+import { InfoIcon, TrendingUp, TrendingDown, DollarSign, Users, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { GeminiAnalyticsResponse } from "@/utils/geminiService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type TimeFrame = "daily" | "weekly" | "monthly" | "yearly";
 type MetricType = "traffic" | "revenue";
@@ -66,12 +67,30 @@ export function RevenueTrafficDashboard({
     revenueChange = 0
   } = analyticsData?.metrics || {};
 
+  const domainExists = analyticsData?.domainExists || false;
+
   return (
     <div className="max-w-6xl mx-auto py-8">
+      {!isLoading && (
+        <Alert className={`mb-6 ${domainExists ? "bg-green-50 dark:bg-green-950/20 text-green-900 dark:text-green-300" : "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-900 dark:text-yellow-300"}`}>
+          <AlertCircle className={`h-4 w-4 ${domainExists ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}`} />
+          <AlertTitle className="font-medium">
+            {domainExists ? "Real Data Available" : "Projected Estimates"}
+          </AlertTitle>
+          <AlertDescription className="text-sm">
+            {domainExists 
+              ? `The analytics shown below are based on actual data for ${domain}.` 
+              : `${domain} appears to be available. The analytics shown below are estimated projections.`}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Traffic</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {domainExists ? "Total Traffic" : "Projected Traffic"}
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -97,7 +116,9 @@ export function RevenueTrafficDashboard({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {domainExists ? "Conversion Rate" : "Est. Conversion Rate"}
+            </CardTitle>
             <InfoIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -117,7 +138,9 @@ export function RevenueTrafficDashboard({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {domainExists ? "Total Revenue" : "Projected Revenue"}
+            </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -143,7 +166,9 @@ export function RevenueTrafficDashboard({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Revenue Per User</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {domainExists ? "Avg. Revenue Per User" : "Est. Revenue Per User"}
+            </CardTitle>
             <InfoIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -167,7 +192,14 @@ export function RevenueTrafficDashboard({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Analytics{domain ? ` for ${domain}` : ''}</CardTitle>
+              <CardTitle>
+                {domain ? `${domain} ${domainExists ? "Analytics" : "Projections"}` : 'Analytics'}
+                {!domainExists && (
+                  <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
+                    Estimated
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription>
                 {domain ? `${domain}'s` : 'Your domain\'s'} {activeTab} metrics over time
                 {!isPremium && timeFrame !== "monthly" && (
