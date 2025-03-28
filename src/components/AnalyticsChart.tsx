@@ -1,20 +1,16 @@
 
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer } from "@/components/ui/chart";
 import { useMediaQuery } from "@/hooks/use-mobile";
 
 type ChartDataPoint = {
@@ -33,7 +29,6 @@ interface AnalyticsChartProps {
 }
 
 export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
-  const [chartType, setChartType] = useState<"area" | "line">("area");
   const isMobile = useMediaQuery("(max-width: 640px)");
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   
@@ -114,92 +109,46 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
   };
   
   return (
-    <Card className="p-4">
-      <div className="mb-4 flex justify-end">
-        <Tabs defaultValue="area" value={chartType} onValueChange={(v) => setChartType(v as "area" | "line")}>
-          <TabsList className="grid w-[180px] grid-cols-2">
-            <TabsTrigger value="area">Area</TabsTrigger>
-            <TabsTrigger value="line">Line</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-      
+    <Card className="p-4">      
       <div className="h-[300px]">
         <ChartContainer 
           config={chartConfig}
           className="w-full h-full"
         >
-          {chartType === "area" ? (
-            <AreaChart 
-              data={chartData} 
-              margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="name" 
-                tickFormatter={formatXAxisTick} 
-                tick={{ fontSize: 12 }}
-                padding={{ left: 10, right: 10 }}
-              />
-              <YAxis 
-                tickFormatter={formatYAxisTick} 
-                tick={{ fontSize: 12 }}
-                width={isMobile ? 40 : 60}
-              />
-              <Tooltip 
-                formatter={tooltipFormatter}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="value" 
-                name={type} 
-                stroke={getColor()} 
-                fill={getColor()} 
-                fillOpacity={0.2}
-              />
-            </AreaChart>
-          ) : (
-            <LineChart 
-              data={chartData} 
-              margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis 
-                dataKey="name" 
-                tickFormatter={formatXAxisTick} 
-                tick={{ fontSize: 12 }}
-                padding={{ left: 10, right: 10 }}
-              />
-              <YAxis 
-                tickFormatter={formatYAxisTick} 
-                tick={{ fontSize: 12 }}
-                width={isMobile ? 40 : 60}
-              />
-              <Tooltip 
-                formatter={tooltipFormatter}
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                  boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="value" 
-                name={type} 
-                stroke={getColor()} 
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
-            </LineChart>
-          )}
+          <LineChart 
+            data={chartData} 
+            margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey="name" 
+              tickFormatter={formatXAxisTick} 
+              tick={{ fontSize: 12 }}
+              padding={{ left: 10, right: 10 }}
+            />
+            <YAxis 
+              tickFormatter={formatYAxisTick} 
+              tick={{ fontSize: 12 }}
+              width={isMobile ? 40 : 60}
+            />
+            <Tooltip 
+              formatter={tooltipFormatter}
+              contentStyle={{
+                backgroundColor: "hsl(var(--background))",
+                border: "1px solid hsl(var(--border))",
+                borderRadius: "6px",
+                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+              }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="value" 
+              name={type} 
+              stroke={getColor()} 
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+            />
+          </LineChart>
         </ChartContainer>
       </div>
     </Card>
