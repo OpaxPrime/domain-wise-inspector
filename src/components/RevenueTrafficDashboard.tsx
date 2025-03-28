@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsChart } from "./AnalyticsChart";
-import { AnalyticsInsights } from "./AnalyticsInsights";
 import { Badge } from "@/components/ui/badge";
 import { InfoIcon, TrendingUp, TrendingDown, DollarSign, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -164,8 +163,8 @@ export function RevenueTrafficDashboard({
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-7">
-        <Card className="md:col-span-5">
+      <div className="grid gap-4">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Analytics{domain ? ` for ${domain}` : ''}</CardTitle>
@@ -237,28 +236,6 @@ export function RevenueTrafficDashboard({
                   </Button>
                 </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>AI Insights</CardTitle>
-            <CardDescription>Smart analysis of your data</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-              </div>
-            ) : (
-              <AnalyticsInsights 
-                type={activeTab} 
-                timeFrame={timeFrame}
-                data={activeTab === "traffic" ? trafficData : revenueData}
-              />
             )}
           </CardContent>
         </Card>
