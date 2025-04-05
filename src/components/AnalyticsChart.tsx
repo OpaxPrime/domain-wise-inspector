@@ -39,16 +39,18 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
     } else {
       // If no data, generate placeholder data
       const placeholderData = [];
+      const baseValue = type === "revenue" ? 200 : 1000; // Different base values for traffic and revenue
+      
       for (let i = 0; i < 10; i++) {
         placeholderData.push({
           name: `Point ${i+1}`,
-          value: Math.floor(Math.random() * 1000),
+          value: Math.floor(Math.random() * baseValue),
           date: new Date().toISOString()
         });
       }
       setChartData(placeholderData);
     }
-  }, [data]);
+  }, [data, type]);
   
   const formatYAxisTick = (value: number): string => {
     if (type === "revenue") {
@@ -143,7 +145,7 @@ export function AnalyticsChart({ data, timeFrame, type }: AnalyticsChartProps) {
             <Line 
               type="monotone" 
               dataKey="value" 
-              name={type} 
+              name={type === "traffic" ? "Traffic" : "Revenue"} 
               stroke={getColor()} 
               dot={{ r: 3 }}
               activeDot={{ r: 5 }}
