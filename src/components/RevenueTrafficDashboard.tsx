@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalyticsChart } from "./AnalyticsChart";
 import { Badge } from "@/components/ui/badge";
-import { InfoIcon, TrendingUp, TrendingDown, DollarSign, Users, AlertCircle } from "lucide-react";
+import { InfoIcon, TrendingUp, TrendingDown, DollarSign, Users, AlertCircle, ExternalLink } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -68,6 +68,11 @@ export function RevenueTrafficDashboard({
   } = analyticsData?.metrics || {};
 
   const domainExists = analyticsData?.domainExists || false;
+  
+  const viewRealDataSource = () => {
+    if (!domain) return;
+    window.open(`https://www.similarweb.com/website/${domain}`, '_blank');
+  };
 
   return (
     <div className="max-w-6xl mx-auto py-8">
@@ -75,12 +80,24 @@ export function RevenueTrafficDashboard({
         <Alert className={`mb-6 ${domainExists ? "bg-green-50 dark:bg-green-950/20 text-green-900 dark:text-green-300" : "bg-yellow-50 dark:bg-yellow-950/20 text-yellow-900 dark:text-yellow-300"}`}>
           <AlertCircle className={`h-4 w-4 ${domainExists ? "text-green-600 dark:text-green-400" : "text-yellow-600 dark:text-yellow-400"}`} />
           <AlertTitle className="font-medium">
-            {domainExists ? "Real Data Available" : "Projected Estimates"}
+            {domainExists ? "Real Analytics Data" : "Projected Estimates"}
           </AlertTitle>
           <AlertDescription className="text-sm">
-            {domainExists 
-              ? `The analytics shown below are based on actual data for ${domain}.` 
-              : `${domain} appears to be available. The analytics shown below are estimated projections.`}
+            {domainExists ? (
+              <span>
+                The analytics shown are based on real traffic data for {domain}.
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="px-0 h-auto text-green-700 dark:text-green-400"
+                  onClick={viewRealDataSource}
+                >
+                  View source <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              </span>
+            ) : (
+              `The domain ${domain} is available. The analytics shown are PROJECTED ESTIMATES only.`
+            )}
           </AlertDescription>
         </Alert>
       )}
@@ -89,7 +106,7 @@ export function RevenueTrafficDashboard({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {domainExists ? "Total Traffic" : "Projected Traffic"}
+              {domainExists ? "Actual Traffic" : "Projected Traffic"}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -139,7 +156,7 @@ export function RevenueTrafficDashboard({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {domainExists ? "Total Revenue" : "Projected Revenue"}
+              {domainExists ? "Actual Revenue" : "Projected Revenue"}
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -167,7 +184,7 @@ export function RevenueTrafficDashboard({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {domainExists ? "Avg. Revenue Per User" : "Est. Revenue Per User"}
+              {domainExists ? "Avg. Revenue/User" : "Est. Revenue/User"}
             </CardTitle>
             <InfoIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -197,6 +214,11 @@ export function RevenueTrafficDashboard({
                 {!domainExists && (
                   <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
                     Estimated
+                  </Badge>
+                )}
+                {domainExists && (
+                  <Badge variant="outline" className="ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">
+                    Real Data
                   </Badge>
                 )}
               </CardTitle>
@@ -243,6 +265,12 @@ export function RevenueTrafficDashboard({
                     timeFrame={timeFrame} 
                     type="traffic" 
                   />
+                  {!domainExists && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      <AlertCircle className="inline h-3 w-3 mr-1" />
+                      These are projected traffic estimates since this domain is not yet active.
+                    </div>
+                  )}
                 </TabsContent>
                 <TabsContent value="revenue" className="space-y-4">
                   <AnalyticsChart 
@@ -250,6 +278,12 @@ export function RevenueTrafficDashboard({
                     timeFrame={timeFrame}
                     type="revenue" 
                   />
+                  {!domainExists && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      <AlertCircle className="inline h-3 w-3 mr-1" />
+                      These are projected revenue estimates based on industry averages.
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             )}

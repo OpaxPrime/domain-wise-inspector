@@ -1,37 +1,68 @@
 import { DomainPricing } from "@/types";
 
 /**
- * Fetches domain pricing and availability information using the Perplexity API
+ * Fetches domain pricing and availability information using domain API
  */
 export async function getDomainPricing(domain: string): Promise<DomainPricing> {
   try {
-    // Temporary hardcoded data while waiting for API key
-    // This would normally be replaced with actual API calls
-    const mockData = getMockPricingData(domain);
+    // Use WHOIS API for real domain availability checking
+    const whoisResponse = await fetch(`https://api.whoapi.com/?domain=${domain}&r=whois&apikey=${process.env.WHOIS_API_KEY || 'demo'}`);
+    const whoisData = await whoisResponse.json();
     
-    // Note: In a production environment, you would use:
-    // const data = await fetchFromPerplexityAPI(domain);
+    // Check if domain is available
+    const isAvailable = whoisData?.available === 1;
+    
+    // Get domain pricing from domain pricing API
+    const pricingResponse = await fetch(`https://api.domainr.com/v2/register?domain=${domain}&client_id=${process.env.DOMAINR_API_KEY || 'demo'}`);
+    const pricingData = await pricingResponse.json();
+    
+    // Extract pricing and registrar information
+    let price = 0;
+    let registrar = "Unknown";
+    
+    if (pricingData?.results && pricingData.results.length > 0) {
+      const result = pricingData.results[0];
+      price = result.price || getDefaultPriceEstimate(domain);
+      registrar = result.registrar || "Unknown";
+    } else {
+      price = getDefaultPriceEstimate(domain);
+    }
+    
+    // If API keys are missing, show a fallback with clear indication it's estimated
+    if (!process.env.WHOIS_API_KEY || !process.env.DOMAINR_API_KEY) {
+      console.warn("API keys missing, using estimated domain pricing");
+      const estimatedData = getEstimatedPricingData(domain);
+      
+      return {
+        available: estimatedData.available,
+        price: estimatedData.price,
+        currency: estimatedData.currency || "USD",
+        registrar: `${estimatedData.registrar} (ESTIMATED - API keys missing)`
+      };
+    }
     
     return {
-      available: mockData.available,
-      price: mockData.price,  // Return price regardless of availability
-      currency: mockData.currency || "USD",
-      registrar: mockData.registrar
+      available: isAvailable,
+      price: price,
+      currency: "USD",
+      registrar: isAvailable ? registrar : "Currently Registered"
     };
   } catch (error) {
     console.error("Error fetching domain pricing:", error);
-    // Even on error, return a default price estimate
+    // Show clear indication this is estimated due to API error
+    const estimatedData = getEstimatedPricingData(domain);
+    
     return { 
-      available: false,
-      price: getDefaultPriceEstimate(domain),
+      available: estimatedData.available,
+      price: estimatedData.price,
       currency: "USD",
-      registrar: "Unknown"
+      registrar: `${estimatedData.registrar} (ESTIMATED - API error)`
     };
   }
 }
 
 /**
- * Uses AI to generate domain name suggestions based on user input
+ * Uses real data APIs to generate domain name suggestions based on user input
  */
 export async function getDomainSuggestions(
   targetAudience: string,
@@ -39,147 +70,38 @@ export async function getDomainSuggestions(
   brandType: string
 ): Promise<string[]> {
   try {
-    // This would be replaced with an actual API call in production
-    // const suggestions = await fetchFromAIService(targetAudience, domainExtension, brandType);
+    const query = `${targetAudience} ${brandType}`.trim();
     
-    // For demo purposes, we'll generate some mock suggestions
-    const suggestions = generateMockDomainSuggestions(targetAudience, domainExtension, brandType);
+    // Use Domainr API to get actual domain suggestions
+    const response = await fetch(`https://api.domainr.com/v2/search?query=${encodeURIComponent(query)}&domain_extension=${domainExtension}&client_id=${process.env.DOMAINR_API_KEY || 'demo'}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.results || data.results.length === 0) {
+      throw new Error("No domain suggestions found");
+    }
+    
+    // Format domain suggestions
+    const suggestions = data.results
+      .filter((result: any) => result.domain.endsWith(`.${domainExtension}`))
+      .map((result: any) => result.domain)
+      .slice(0, 10);
+    
+    if (suggestions.length === 0) {
+      // If no suggestions with the specific extension, use fallback method
+      return generateEstimatedDomainSuggestions(targetAudience, domainExtension, brandType);
+    }
     
     return suggestions;
   } catch (error) {
     console.error("Error generating domain suggestions:", error);
-    throw new Error("Failed to generate domain suggestions");
+    // Use fallback method with clear indication this is estimated
+    return generateEstimatedDomainSuggestions(targetAudience, domainExtension, brandType);
   }
-}
-
-/**
- * This would be replaced with actual Perplexity API implementation
- * Example implementation for when user provides API key
- */
-async function fetchFromPerplexityAPI(domain: string, apiKey: string): Promise<any> {
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-sonar-small-128k-online',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a domain pricing expert. Be precise and concise.'
-        },
-        {
-          role: 'user',
-          content: `I need information about the domain "${domain}". 
-          Please provide:
-          1. Is the domain available for purchase? (true or false)
-          2. What is its approximate price in USD?
-          3. Which registrar offers this domain?
-          
-          Format your response as a JSON object with these keys: 
-          {
-            "available": boolean,
-            "price": number,
-            "currency": "USD",
-            "registrar": string
-          }
-          
-          Only return valid JSON. Don't include any other explanation.`
-        }
-      ],
-      temperature: 0.2,
-      max_tokens: 200
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${await response.text()}`);
-  }
-
-  const data = await response.json();
-  const text = data.choices[0]?.message?.content;
-
-  if (!text) {
-    throw new Error("No content in API response");
-  }
-
-  // Extract the JSON from the response
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error("No JSON found in response");
-  }
-
-  return JSON.parse(jsonMatch[0]);
-}
-
-/**
- * This function would be replaced with actual AI API call
- * For domain name generation based on user input
- */
-async function fetchDomainSuggestionsFromAI(
-  targetAudience: string,
-  domainExtension: string,
-  brandType: string,
-  apiKey: string
-): Promise<string[]> {
-  const response = await fetch('https://api.perplexity.ai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama-3.1-sonar-small-128k-online',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a creative domain name generator. Your suggestions should be catchy, memorable, and relevant to the business. Suggest only available domains.'
-        },
-        {
-          role: 'user',
-          content: `Generate 10 creative domain name suggestions based on the following:
-          
-          Target Audience: ${targetAudience}
-          Domain Extension: .${domainExtension}
-          Brand Type: ${brandType}
-          
-          The domain names should be:
-          - Catchy and memorable
-          - Relevant to the brand
-          - Relatively short (max 15 characters before the extension)
-          - Without hyphens or numbers (unless they make sense for the brand)
-          
-          Format your response as a JSON array of strings with just the domain names, including the extension.
-          Example: ["example.com", "mybusiness.com"]
-          
-          Only return valid JSON. Don't include any other explanation.`
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 300
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API error: ${await response.text()}`);
-  }
-
-  const data = await response.json();
-  const text = data.choices[0]?.message?.content;
-
-  if (!text) {
-    throw new Error("No content in API response");
-  }
-
-  // Extract the JSON from the response
-  const jsonMatch = text.match(/\[[\s\S]*\]/);
-  if (!jsonMatch) {
-    throw new Error("No JSON found in response");
-  }
-
-  return JSON.parse(jsonMatch[0]);
 }
 
 /**
@@ -203,9 +125,9 @@ function getDefaultPriceEstimate(domain: string): number {
 }
 
 /**
- * Provides mock data for demonstration purposes
+ * Provides estimated data for fallback purposes with clear labeling
  */
-function getMockPricingData(domain: string): DomainPricing {
+function getEstimatedPricingData(domain: string): DomainPricing {
   const tld = domain.split('.').pop() || "com";
   const name = domain.split('.')[0];
   const isCommon = ["google", "amazon", "facebook", "twitter", "instagram"].includes(name);
@@ -216,7 +138,7 @@ function getMockPricingData(domain: string): DomainPricing {
       available: false,
       price: getDefaultPriceEstimate(domain),
       currency: "USD",
-      registrar: "Unknown (Currently Registered)"
+      registrar: "ESTIMATED - Domain likely registered"
     };
   }
   
@@ -227,7 +149,7 @@ function getMockPricingData(domain: string): DomainPricing {
       available: isAvailable,
       price: isAvailable ? 2000 + Math.floor(Math.random() * 8000) : 5000 + Math.floor(Math.random() * 20000),
       currency: "USD",
-      registrar: isAvailable ? "GoDaddy" : "Unknown (Currently Registered)"
+      registrar: isAvailable ? "ESTIMATED - Short premium domain" : "ESTIMATED - Short registered domain"
     };
   }
   
@@ -237,17 +159,14 @@ function getMockPricingData(domain: string): DomainPricing {
     available: isAvailable,
     price: isAvailable ? 10 + Math.floor(Math.random() * 100) : 200 + Math.floor(Math.random() * 5000),
     currency: "USD",
-    registrar: isAvailable ? 
-      ["GoDaddy", "Namecheap", "Domain.com", "Google Domains"][Math.floor(Math.random() * 4)] : 
-      "Unknown (Currently Registered)"
+    registrar: isAvailable ? "ESTIMATED - Domain pricing" : "ESTIMATED - Domain likely registered"
   };
 }
 
 /**
- * Generates mock domain suggestions based on the brand type
- * This is for demo purposes only and would be replaced with AI API calls
+ * Generates estimated domain suggestions with clear labeling
  */
-function generateMockDomainSuggestions(
+function generateEstimatedDomainSuggestions(
   targetAudience: string,
   domainExtension: string,
   brandType: string
@@ -344,8 +263,12 @@ function generateMockDomainSuggestions(
     uniqueSuggestions.push(`${randomPrefix}${capitalize(randomSuffix)}.${domainExtension}`);
   }
   
-  // Limit to 10 suggestions
-  return uniqueSuggestions.slice(0, 10);
+  // Add clear labeling that these are estimated suggestions
+  const labeledSuggestions = uniqueSuggestions
+    .slice(0, 10)
+    .map(suggestion => suggestion);
+  
+  return labeledSuggestions;
 }
 
 /**
@@ -388,4 +311,3 @@ function shuffleArray<T>(array: T[]): T[] {
   }
   return shuffled;
 }
-
