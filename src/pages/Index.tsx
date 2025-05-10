@@ -10,9 +10,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
         <div className="font-semibold text-lg">Domain SEO Analyzer</div>
-        <div className="flex items-center gap-4">
-          <UserMenu />
-        </div>
+        <UserMenu />
       </div>
       
       <Hero />

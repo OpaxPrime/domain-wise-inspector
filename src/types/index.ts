@@ -9,13 +9,6 @@ export interface SEOMetrics {
   overallScore: number;
 }
 
-export interface DomainPricing {
-  available: boolean;
-  price?: number;
-  currency?: string;
-  registrar?: string;
-}
-
 export interface AnalysisResult {
   domain: string;
   metrics: SEOMetrics;
@@ -24,8 +17,6 @@ export interface AnalysisResult {
   weaknesses: string[];
   strengthDetails: Record<string, string>;
   weaknessDetails: Record<string, string>;
-  recommendationDetails?: Record<string, string>;
-  pricing?: DomainPricing;
 }
 
 export interface DomainComparison {

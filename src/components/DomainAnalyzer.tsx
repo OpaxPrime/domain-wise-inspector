@@ -7,13 +7,10 @@ import { AnalysisResult, DomainComparison } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ArrowRight, Lock, Crown, Sparkles } from "lucide-react";
+import { Plus, Trash2, ArrowRight, Lock, Crown } from "lucide-react";
 import { AnalysisResultView } from "./AnalysisResult";
 import { useAuth } from "@/context/AuthContext";
 import { PremiumBanner } from "./PremiumBanner";
-import { DomainGenerator } from "./DomainGenerator";
-import { RevenueTrafficDashboard } from "./RevenueTrafficDashboard";
-import { fetchDomainAnalytics, GeminiAnalyticsResponse } from "@/utils/geminiService";
 
 const STRIPE_CHECKOUT_URL = "https://buy.stripe.com/cN2fZj8HF6LnbCM144";
 
@@ -22,10 +19,6 @@ export const DomainAnalyzer = () => {
   const [results, setResults] = useState<AnalysisResult[]>([]);
   const [comparison, setComparison] = useState<DomainComparison | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showGenerator, setShowGenerator] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analyticsData, setAnalyticsData] = useState<GeminiAnalyticsResponse | null>(null);
-  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const { toast } = useToast();
   const { user, updateUsage } = useAuth();
   
@@ -87,64 +80,23 @@ export const DomainAnalyzer = () => {
     setIsAnalyzing(true);
     setResults([]);
     setComparison(null);
-    setShowAnalytics(false);
-    setAnalyticsData(null);
 
     try {
-      // Show realistic loading time while fetching domain prices
-      setTimeout(() => {
-        toast({
-          title: "Analyzing domains...",
-          description: "Fetching pricing information and analyzing SEO metrics",
-        });
-      }, 1000);
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       if (validDomains.length === 1) {
-        const result = await analyzeDomain(validDomains[0]);
+        const result = analyzeDomain(validDomains[0]);
         setResults([result]);
-        
-        // Fetch analytics data for the domain using Gemini API
-        setIsLoadingAnalytics(true);
-        try {
-          const analytics = await fetchDomainAnalytics(validDomains[0]);
-          setAnalyticsData(analytics);
-        } catch (error) {
-          console.error("Failed to fetch analytics data:", error);
-          toast({
-            title: "Analytics data incomplete",
-            description: "Some analytics data could not be loaded",
-            variant: "destructive",
-          });
-        } finally {
-          setIsLoadingAnalytics(false);
-        }
-        
       } else {
-        const comparisonResult = await compareDomains(validDomains);
+        const comparisonResult = compareDomains(validDomains);
         setResults(comparisonResult.domains);
         setComparison(comparisonResult);
-        
-        // Fetch analytics for the best domain if there is one
-        if (comparisonResult.bestChoice) {
-          setIsLoadingAnalytics(true);
-          try {
-            const analytics = await fetchDomainAnalytics(comparisonResult.bestChoice);
-            setAnalyticsData(analytics);
-          } catch (error) {
-            console.error("Failed to fetch analytics data:", error);
-          } finally {
-            setIsLoadingAnalytics(false);
-          }
-        }
       }
       
       toast({
         title: "Analysis complete",
         description: `Successfully analyzed ${validDomains.length} domain${validDomains.length > 1 ? 's' : ''}`,
       });
-      
-      // Show analytics after analysis is complete
-      setShowAnalytics(true);
     } catch (error) {
       console.error("Analysis error:", error);
       toast({
@@ -161,15 +113,6 @@ export const DomainAnalyzer = () => {
     window.open(STRIPE_CHECKOUT_URL, '_blank');
   };
 
-  const handleDomainSelect = (domain: string) => {
-    setDomains([domain]);
-    setShowGenerator(false);
-    toast({
-      title: "Domain selected",
-      description: `Selected domain: ${domain}`,
-    });
-  };
-
   return (
     <div id="analyzer" className="w-full max-w-5xl mx-auto px-6 py-16">
       <motion.div
@@ -183,119 +126,91 @@ export const DomainAnalyzer = () => {
         {user && <PremiumBanner />}
         
         <Card className="glass-card p-6 md:p-8 shadow-soft">
-          {!showGenerator ? (
-            <div className="space-y-4">
-              {domains.map((domain, index) => (
-                <div key={index} className="flex items-center gap-3">
-                  <div className="flex-1">
-                    <Input
-                      value={domain}
-                      onChange={(e) => updateDomain(index, e.target.value)}
-                      placeholder="Enter domain name (e.g., example.com)"
-                      className="bg-white/60 dark:bg-black/30 border-gray-200"
-                    />
+          <div className="space-y-4">
+            {domains.map((domain, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="flex-1">
+                  <Input
+                    value={domain}
+                    onChange={(e) => updateDomain(index, e.target.value)}
+                    placeholder="Enter domain name (e.g., example.com)"
+                    className="bg-white/60 dark:bg-black/30 border-gray-200"
+                  />
+                </div>
+                {domains.length > 1 && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => removeDomainInput(index)}
+                    className="text-gray-500 hover:text-red-500 hover:border-red-200"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            
+            <div className="flex justify-between pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={!isPremium && domains.length >= 2 ? handleUpgradeToPremium : addDomainInput}
+                disabled={domains.length >= 5 || isAnalyzing}
+                className="text-sm group"
+              >
+                {!isPremium && domains.length >= 2 ? (
+                  <>
+                    <Lock className="h-3.5 w-3.5 mr-1 group-hover:hidden" />
+                    <Crown className="h-3.5 w-3.5 mr-1 hidden group-hover:block text-amber-500" />
+                    <span className="group-hover:text-amber-500">Premium feature</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-1" /> Add domain
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || domains.every(d => d.trim() === '')}
+                className="relative overflow-hidden group"
+              >
+                {isAnalyzing ? (
+                  <div className="flex items-center">
+                    <div className="loading-dots flex">
+                      <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
+                      <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
+                      <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
+                    </div>
                   </div>
-                  {domains.length > 1 && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeDomainInput(index)}
-                      className="text-gray-500 hover:text-red-500 hover:border-red-200"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              
-              <div className="flex justify-between pt-2">
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={!isPremium && domains.length >= 2 ? handleUpgradeToPremium : addDomainInput}
-                    disabled={domains.length >= 5 || isAnalyzing}
-                    className="text-sm group"
-                  >
-                    {!isPremium && domains.length >= 2 ? (
-                      <>
-                        <Lock className="h-3.5 w-3.5 mr-1 group-hover:hidden" />
-                        <Crown className="h-3.5 w-3.5 mr-1 hidden group-hover:block text-amber-500" />
-                        <span className="group-hover:text-amber-500">Premium feature</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-1" /> Add domain
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowGenerator(true)}
-                    className="text-sm"
-                  >
-                    <Sparkles className="h-4 w-4 mr-1 text-primary" /> 
-                    Generate domain ideas
-                  </Button>
-                </div>
-                
-                <Button 
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || domains.every(d => d.trim() === '')}
-                  className="relative overflow-hidden group"
-                >
-                  {isAnalyzing ? (
-                    <div className="flex items-center">
-                      <div className="loading-dots flex">
-                        <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
-                        <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
-                        <div className="h-2 w-2 bg-white rounded-full mx-0.5"></div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center">
-                      Analyze
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
-                  )}
-                  <span className="absolute inset-0 h-full w-full scale-0 rounded-full bg-white/20 transition-all duration-300 group-hover:scale-100 group-active:bg-white/25"></span>
-                </Button>
-              </div>
-              
-              {!user && (
-                <div className="mt-4 text-sm text-muted-foreground bg-muted/40 p-3 rounded-md">
-                  <p className="flex items-center">
-                    <Lock className="h-3.5 w-3.5 mr-2" />
-                    Sign in to analyze up to 5 domains per day, or 
-                    <Button 
-                      variant="link" 
-                      onClick={handleUpgradeToPremium}
-                      className="p-0 h-auto text-primary font-medium mx-1"
-                    >
-                      upgrade to premium
-                    </Button> 
-                    for unlimited analyses.
-                  </p>
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center">
+                    Analyze
+                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+                )}
+                <span className="absolute inset-0 h-full w-full scale-0 rounded-full bg-white/20 transition-all duration-300 group-hover:scale-100 group-active:bg-white/25"></span>
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <DomainGenerator onDomainSelect={handleDomainSelect} />
-              
-              <div className="flex justify-end">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setShowGenerator(false)}
-                >
-                  Back to manual input
-                </Button>
+            
+            {!user && (
+              <div className="mt-4 text-sm text-muted-foreground bg-muted/40 p-3 rounded-md">
+                <p className="flex items-center">
+                  <Lock className="h-3.5 w-3.5 mr-2" />
+                  Sign in to analyze up to 5 domains per day, or 
+                  <Button 
+                    variant="link" 
+                    onClick={handleUpgradeToPremium}
+                    className="p-0 h-auto text-primary font-medium mx-1"
+                  >
+                    upgrade to premium
+                  </Button> 
+                  for unlimited analyses.
+                </p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </Card>
         
         <AnimatePresence>
@@ -329,22 +244,6 @@ export const DomainAnalyzer = () => {
                   />
                 ))}
               </div>
-              
-              {/* Revenue and Traffic Analytics Dashboard */}
-              {showAnalytics && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.5 }}
-                >
-                  <h2 className="text-2xl font-bold mb-6">Projected Performance Analytics</h2>
-                  <RevenueTrafficDashboard 
-                    domain={results.length === 1 ? results[0].domain : comparison?.bestChoice}
-                    analyticsData={analyticsData || undefined}
-                    isLoading={isLoadingAnalytics}
-                  />
-                </motion.div>
-              )}
             </motion.div>
           )}
         </AnimatePresence>

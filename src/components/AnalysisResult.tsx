@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, Lock, Crown, Check, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Lock, Crown } from "lucide-react";
 import { SEOMetricsChart } from "./SEOMetricsChart";
 import { AnalysisResult } from "@/types";
 import { motion } from "framer-motion";
@@ -19,10 +18,8 @@ interface AnalysisResultViewProps {
 export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResultViewProps) => {
   const [isStrengthsOpen, setIsStrengthsOpen] = useState(false);
   const [isWeaknessesOpen, setIsWeaknessesOpen] = useState(false);
-  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
   const [expandedStrength, setExpandedStrength] = useState<string | null>(null);
   const [expandedWeakness, setExpandedWeakness] = useState<string | null>(null);
-  const [expandedRecommendation, setExpandedRecommendation] = useState<string | null>(null);
 
   const toggleStrengthExpansion = (strength: string) => {
     setExpandedStrength(expandedStrength === strength ? null : strength);
@@ -32,17 +29,11 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
     setExpandedWeakness(expandedWeakness === weakness ? null : weakness);
   };
 
-  const toggleRecommendationExpansion = (recommendation: string) => {
-    setExpandedRecommendation(expandedRecommendation === recommendation ? null : recommendation);
-  };
-
   // Show only 3 strengths and 2 weaknesses for free users
   const visibleStrengths = isPremium ? result.strengths : result.strengths.slice(0, 3);
   const visibleWeaknesses = isPremium ? result.weaknesses : result.weaknesses.slice(0, 2);
-  const visibleRecommendations = isPremium ? result.recommendations : result.recommendations.slice(0, 3);
   const hiddenStrengthsCount = result.strengths.length - visibleStrengths.length;
   const hiddenWeaknessesCount = result.weaknesses.length - visibleWeaknesses.length;
-  const hiddenRecommendationsCount = result.recommendations.length - visibleRecommendations.length;
 
   // Score color logic based on score value
   const getScoreColor = (score: number) => {
@@ -57,17 +48,6 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
     window.open(STRIPE_CHECKOUT_URL, '_blank');
   };
 
-  // Format price display
-  const formatPrice = (price?: number, currency: string = "USD") => {
-    if (price === undefined) return "N/A";
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
-
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-muted/30 pb-4">
@@ -79,97 +59,20 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
             </Badge>
           </div>
         </div>
-        
-        {/* Domain availability and pricing information */}
-        {result.pricing && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant={result.pricing.available ? "outline" : "secondary"} className="font-normal">
-              {result.pricing.available ? (
-                <div className="flex items-center">
-                  <Check className="h-3 w-3 mr-1 text-green-500" />
-                  <span>Available: {formatPrice(result.pricing.price, result.pricing.currency)}</span>
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <X className="h-3 w-3 mr-1 text-red-500" />
-                  <span>Not Available: {formatPrice(result.pricing.price, result.pricing.currency)}</span>
-                </div>
-              )}
-            </Badge>
-            
-            {result.pricing.registrar && (
-              <Badge variant="outline" className="font-normal">
-                Via: {result.pricing.registrar}
-              </Badge>
-            )}
-          </div>
-        )}
       </CardHeader>
       <CardContent className="pt-6 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <div className="mt-6">
-              <Button
-                variant="ghost"
-                className="w-full justify-between mb-2 bg-muted/40"
-                onClick={() => setIsRecommendationsOpen(!isRecommendationsOpen)}
-              >
-                <span className="font-medium">Recommendations</span>
-                {isRecommendationsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </Button>
-              
-              {isRecommendationsOpen && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="rounded-md border p-4 space-y-3"
-                >
-                  {visibleRecommendations.map((recommendation, index) => (
-                    <div key={index} className="space-y-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full justify-between p-2 h-auto text-left font-normal"
-                        onClick={() => toggleRecommendationExpansion(recommendation)}
-                      >
-                        <span className="line-clamp-1 text-left mr-2">{recommendation}</span>
-                        {expandedRecommendation === recommendation ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
-                      </Button>
-                      
-                      {expandedRecommendation === recommendation && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="text-sm text-muted-foreground p-2 pl-3 border-l-2 ml-2"
-                        >
-                          {result.recommendationDetails?.[recommendation] || 
-                            "Implementing this recommendation will improve your domain's SEO performance and visibility."}
-                        </motion.div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {!isPremium && hiddenRecommendationsCount > 0 && (
-                    <div className="flex items-center justify-center py-2 border-t border-dashed">
-                      <span className="text-sm text-primary flex items-center">
-                        <Lock className="h-3 w-3 mr-1.5" />
-                        {hiddenRecommendationsCount} more recommendations with Premium
-                      </span>
-                    </div>
-                  )}
-                </motion.div>
-              )}
+            <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
+            <div className="h-48">
+              <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />
             </div>
             
             {!isPremium && (
-              <div className="mt-6">
+              <div className="mt-4 flex justify-center">
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="w-full text-sm group">
+                    <Button variant="outline" size="sm" className="text-xs group">
                       <Lock className="h-3 w-3 mr-1 group-hover:hidden" />
                       <Crown className="h-3 w-3 mr-1 hidden group-hover:block text-amber-500" />
                       <span className="group-hover:text-amber-500">Unlock All Metrics</span>
@@ -193,6 +96,26 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                 </Dialog>
               </div>
             )}
+            
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-3">Recommendations</h3>
+              <ul className="space-y-2 list-disc list-inside text-sm text-muted-foreground">
+                {isPremium
+                  ? result.recommendations.map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))
+                  : result.recommendations.slice(0, 3).map((rec, i) => (
+                      <li key={i}>{rec}</li>
+                    ))}
+                
+                {!isPremium && result.recommendations.length > 3 && (
+                  <li className="flex items-center text-primary font-medium">
+                    <Lock className="h-3 w-3 mr-1.5" />
+                    <span>{result.recommendations.length - 3} more recommendations with Premium</span>
+                  </li>
+                )}
+              </ul>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -222,8 +145,8 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                         className="w-full justify-between p-2 h-auto text-left font-normal"
                         onClick={() => toggleStrengthExpansion(strength)}
                       >
-                        <span className="line-clamp-1 text-left mr-2">{strength}</span>
-                        {expandedStrength === strength ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
+                        <span>{strength}</span>
+                        {expandedStrength === strength ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </Button>
                       
                       {expandedStrength === strength && (
@@ -278,8 +201,8 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                         className="w-full justify-between p-2 h-auto text-left font-normal"
                         onClick={() => toggleWeaknessExpansion(weakness)}
                       >
-                        <span className="line-clamp-1 text-left mr-2">{weakness}</span>
-                        {expandedWeakness === weakness ? <ChevronUp size={14} className="flex-shrink-0" /> : <ChevronDown size={14} className="flex-shrink-0" />}
+                        <span>{weakness}</span>
+                        {expandedWeakness === weakness ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                       </Button>
                       
                       {expandedWeakness === weakness && (
@@ -306,12 +229,6 @@ export const AnalysisResultView = ({ result, isPremium = false }: AnalysisResult
                   )}
                 </motion.div>
               )}
-            </div>
-            
-            {/* SEO Metrics Chart */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">SEO Metrics</h3>
-              <SEOMetricsChart metrics={result.metrics} isPremium={isPremium} />
             </div>
           </div>
         </div>
